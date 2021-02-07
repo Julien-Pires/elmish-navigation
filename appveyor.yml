@@ -5,8 +5,11 @@ image: Visual Studio 2019
 before_build:
   - dotnet restore src/Elmish.Navigation.sln
 
+after_build:
+  - dotnet pack
+
 build:
-  verbosity: detailed
+  verbosity: minimal
   publish_nuget: true
   publish_nuget_symbols: true
 
