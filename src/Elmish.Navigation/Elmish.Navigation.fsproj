@@ -13,6 +13,7 @@
   <ItemGroup>
     <Compile Include="Types.fsi" />
     <Compile Include="Types.fs" />
+    <Compile Include="Cmd.fsi" />
     <Compile Include="Cmd.fs" />
     <Compile Include="Navigation.fsi" />
     <Compile Include="Navigation.fs" />

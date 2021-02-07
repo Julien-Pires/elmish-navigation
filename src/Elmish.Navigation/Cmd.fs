@@ -1,6 +1,11 @@
+namespace Elmish.Navigation
+
 [<RequireQualifiedAccess>]
-module Cmd
+module Cmd =
     open Elmish
 
     let cast cmd =
         cmd |> Cmd.map (fun (msg: obj) -> msg :?> 'Msg)
+
+    let navigate msg =
+        msg |> NavigationMsg |> Cmd.ofMsg
