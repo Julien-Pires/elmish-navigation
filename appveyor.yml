@@ -6,7 +6,7 @@ before_build:
   - dotnet restore src/Elmish.Navigation.sln
 
 after_build:
-  - dotnet pack
+  - dotnet pack src/Elmish.Navigation.sln
 
 build:
   verbosity: minimal
