@@ -6,7 +6,7 @@ before_build:
   - dotnet restore src/Elmish.Navigation.sln
 
 build:
-  verbosity: minimal
+  verbosity: detailed
   publish_nuget: true
   publish_nuget_symbols: true
 
