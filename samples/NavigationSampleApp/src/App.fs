@@ -15,17 +15,22 @@ type Model = {
 
 type Message =
     | Increment
-    | Decrement
+    | Move of string
 
 let init () = 
     { Navigation = Navigation.init }, []
+
+let mapCommand msg =
+    match msg with
+    | Move page -> Navigate page |> Cmd.navigate
+    | _ -> []
 
 let updateNavigation model navigationState =
     { model with Navigation = navigationState }, []
 
 let update msg model =
     match msg with
-    | Decrement -> model, []
+    | Increment -> model, []
     | _ -> model, []
 
 module R = Fable.ReactNative.Helpers
@@ -41,18 +46,17 @@ let view model dispatch navigation =
         R.view [] [
             R.button [
                 P.ButtonProperties.Title "Press Me"
-                P.ButtonProperties.OnPress (fun _ -> dispatch Decrement)
+                P.ButtonProperties.OnPress (fun _ -> dispatch <| Move "Home")
             ] [
                 R.text [] "Press" ]
         ]
-
 
 let pages = [
     "Home", Home.page
     "CharacterCreation", CharacterCreation.page ]
 
 Program.mkProgram init update view
+|> Program.withNavigation pages updateNavigation (fun model -> model.Navigation) mapCommand
 |> Program.withConsoleTrace
-|> Program.withNavigation pages updateNavigation (fun model -> model.Navigation)
 |> Program.withReactNativeExpo
 |> Program.run

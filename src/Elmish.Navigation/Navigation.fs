@@ -78,12 +78,13 @@ module Program =
     let init userInit () = 
         userInit() |> map
 
-    let update getState updateState pages userUpdate msg model =
+    let update getState updateState mapAppCommand pages userUpdate msg model =
         let navigationState = getState model
         match msg with
-        | AppMsg appMsg -> 
+        | AppMsg appMsg ->
+            let mappedCmd = mapAppCommand appMsg
             userUpdate appMsg model 
-            ||> fun model cmd -> model, cmd |> Cmd.map AppMsg
+            ||> fun model cmd -> model, Cmd.batch [mappedCmd; cmd |> Cmd.map AppMsg]
         | PageMsg pageMsg ->
             let (navigationState, updateCmd) = update pageMsg navigationState pages
             let (model, cmd) = updateState model navigationState
@@ -115,12 +116,12 @@ module Program =
     let subs userSubscribe model =
         userSubscribe model |> fun cmd -> cmd |> Cmd.map AppMsg
 
-    let withNavigation pages updateState getState program =
+    let withNavigation pages updateState getState mapAppCommand program =
         let pages =
             pages 
             |> List.map (fun (name, page) -> (PageName name, page))
             |> Map.ofList
-        let update = update getState updateState pages
+        let update = update getState updateState mapAppCommand pages
         let view = view getState pages
         program
         |> Program.map init update view setState subs
