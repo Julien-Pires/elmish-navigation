@@ -15,8 +15,8 @@ namespace Elmish.Navigation
     { Stack: PageModel list }
 
   type NavigationMessage<'Params> =
-    | Navigate of PageName
-    | NavigateParams of PageName * 'Params option
+    | Navigate of string
+    | NavigateParams of string * 'Params option
     | NavigateBack
     | NavigateBackParams of 'Params option
 
@@ -24,6 +24,11 @@ namespace Elmish.Navigation
     | AppMsg of 'msg
     | PageMsg of 'msg
     | NavigationMsg of NavigationMessage<'Params>
+    with
+      static member
+        Cast : msg:Navigable<'msg, 'Params> -> Navigable<obj, 'Params>
+      static member
+        Upcast<'Msg> : msg:Navigable<obj, 'Params> -> Navigable<'Msg, 'Params>
 
   type Navigation<'Page,'Params> =
     { Dispatch: Dispatch<NavigationMessage<'Params>>
@@ -31,26 +36,26 @@ namespace Elmish.Navigation
 
   type Dispatch<'Msg> = 'Msg -> unit
 
-  type Init<'Model,'Msg> = unit -> 'Model * Cmd<'Msg>
+  type Init<'Model, 'Msg, 'Args> = unit -> 'Model * Cmd<Navigable<'Msg, 'Args>>
 
-  type Update<'Model,'Msg> = 'Msg -> 'Model -> 'Model * Cmd<'Msg>
+  type Update<'Model, 'Msg, 'Args> = 'Msg -> 'Model -> 'Model * Cmd<Navigable<'Msg, 'Args>>
 
-  type View<'Model,'Msg,'View> = 'Model -> Dispatch<'Msg> -> 'View
+  type View<'Model, 'Msg, 'View> = 'Model -> Dispatch<'Msg> -> 'View
 
-  type OnNavigate<'Model,'Msg,'Params> =
-    'Model -> OnNavigationParameters<'Params> -> 'Model * Cmd<'Msg>
+  type OnNavigate<'Model, 'Msg, 'Args> =
+    'Model -> OnNavigationParameters<'Args> -> 'Model * Cmd<Navigable<'Msg, 'Args>>
 
   type Page<'View, 'Args> = {
-    Init : Init<obj,obj>
-    Update : Update<obj, obj>
+    Init : Init<obj, obj, 'Args>
+    Update : Update<obj, obj, 'Args>
     View : View<obj, obj, 'View>
     OnNavigate : OnNavigate<obj, obj, 'Args> }
     with
       static member
-        Create : init:Init<'Model,'Msg> * view:View<'Model,'Msg,'View> *
-                 ?update:Update<'Model,'Msg> *
-                 ?onNavigate:OnNavigate<'Model,'Msg,'Params> ->
-                   Page<'View,'Params>
+        Create : init:Init<'Model,'Msg, 'Args> * view:View<'Model,'Msg,'View> *
+                 ?update:Update<'Model,'Msg, 'Args> *
+                 ?onNavigate:OnNavigate<'Model,'Msg,'Args> ->
+                   Page<'View,'Args>
     end
 
-  type private Pages<'View, 'Params> = Map<PageName, Page<'View, 'Params>>
+  type private Pages<'View, 'Args> = Map<PageName, Page<'View, 'Args>>

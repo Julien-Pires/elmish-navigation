@@ -4,6 +4,39 @@ open Elmish
 
 type PageName = PageName of string
 
+type PageModel = {
+    Name: PageName
+    Model: obj }
+
+type NavigationState = {
+    Stack: PageModel list }
+
+type NavigationMessage<'Params> =
+    | Navigate of string
+    | NavigateParams of string * 'Params option
+    | NavigateBack
+    | NavigateBackParams of 'Params option
+
+type Navigable<'msg, 'Params> =
+    | AppMsg of 'msg
+    | PageMsg of 'msg
+    | NavigationMsg of NavigationMessage<'Params>
+    with
+        static member Cast(msg: Navigable<'msg, 'Params>) =
+            match msg with
+            | AppMsg msg -> AppMsg (msg :> obj)
+            | PageMsg msg -> PageMsg (msg :> obj)
+            | NavigationMsg args -> NavigationMsg args
+        static member Upcast<'Msg>(msg: Navigable<obj, 'Params>) =
+            match msg with
+            | AppMsg msg -> AppMsg (msg :?> 'Msg)
+            | PageMsg msg -> PageMsg (msg :?> 'Msg)
+            | NavigationMsg args -> NavigationMsg args
+
+type Navigation<'Page, 'Params> = {
+    Dispatch: Dispatch<NavigationMessage<'Params>> 
+    CurrentPage: 'Page option }
+
 type OnNavigationParameters<'Params> = {
     Source: PageName option
     Parameters: 'Params option } 
@@ -16,50 +49,29 @@ type OnNavigationParameters<'Params> = {
 
 type Dispatch<'Msg> = 'Msg -> unit
 
-type Init<'Model, 'Msg> = unit -> 'Model * Cmd<'Msg>
+type Init<'Model, 'Msg, 'Args> = unit -> 'Model * Cmd<Navigable<'Msg, 'Args>>
 
-type Update<'Model, 'Msg> = 'Msg -> 'Model -> 'Model * Cmd<'Msg>
+type Update<'Model, 'Msg, 'Args> = 'Msg -> 'Model -> 'Model * Cmd<Navigable<'Msg, 'Args>>
 
 type View<'Model, 'Msg, 'View> = 'Model -> Dispatch<'Msg> -> 'View
 
-type OnNavigate<'Model, 'Msg, 'Params> = 'Model -> OnNavigationParameters<'Params> -> 'Model * Cmd<'Msg>
-
-type PageModel = {
-    Name: PageName
-    Model: obj }
-
-type NavigationState = {
-    Stack: PageModel list }
-
-type NavigationMessage<'Params> =
-    | Navigate of PageName
-    | NavigateParams of PageName * 'Params option
-    | NavigateBack
-    | NavigateBackParams of 'Params option
-
-type Navigable<'msg, 'Params> =
-    | AppMsg of 'msg
-    | PageMsg of 'msg
-    | NavigationMsg of NavigationMessage<'Params>
-
-type Navigation<'Page, 'Params> = {
-    Dispatch: Dispatch<NavigationMessage<'Params>> 
-    CurrentPage: 'Page option }
+type OnNavigate<'Model, 'Msg, 'Args> = 'Model -> OnNavigationParameters<'Args> -> 'Model * Cmd<Navigable<'Msg, 'Args>>
 
 type Page<'View, 'Args> = {
-    Init : Init<obj,obj>
-    Update : Update<obj, obj>
+    Init : Init<obj, obj, 'Args>
+    Update : Update<obj, obj, 'Args>
     View : View<obj, obj, 'View>
     OnNavigate : OnNavigate<obj, obj, 'Args> }
     with
         static member Create
             (
-                init: Init<'Model, 'Msg>, 
+                init: Init<'Model, 'Msg, 'Args>, 
                 view: View<'Model, 'Msg, 'View>, 
-                ?update: Update<'Model, 'Msg>, 
-                ?onNavigate: OnNavigate<'Model, 'Msg, 'Params>
-            ) = 
-            let map (model, cmd) = model :> obj, cmd |> Cmd.map (fun msg -> msg :> obj)
+                ?update: Update<'Model, 'Msg, 'Args>, 
+                ?onNavigate: OnNavigate<'Model, 'Msg, 'Args>
+            ) =
+            let map (model, cmd: Cmd<Navigable<'Msg, 'Args>>) = 
+                model :> obj, cmd |> Cmd.map Navigable<'Msg, 'Args>.Cast
             let init = fun () -> init() |> map
             let view = fun (model: obj) (dispatch: Dispatch<obj>) -> view (model :?> 'Model) dispatch
             let update =
@@ -77,4 +89,4 @@ type Page<'View, 'Args> = {
               View = view
               OnNavigate = onNavigate }
 
-type Pages<'View, 'Params> = Map<PageName, Page<'View, 'Params>>
+type Pages<'View, 'Args> = Map<PageName, Page<'View, 'Args>>

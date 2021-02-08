@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="Types.fs" />
     <Compile Include="Pages/Home.fs" />
+    <Compile Include="Pages/CharacterCreation.fs" />
     <Compile Include="expo.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
