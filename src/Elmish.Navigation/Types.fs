@@ -88,24 +88,26 @@ type Page<'View, 'Args> = {
                 ?onNavigate: OnNavigate<'Model, 'Msg, 'Args>,
                 ?mapCommand: MapCommand<'Msg, 'CmdMsg, 'Args>
             ) =
-            let map (model, cmd: Cmd<Message<'Msg, 'Args>>) = 
-                model :> obj, cmd |> Cmd.map Message<'Msg, _>.Upcast
-            let init = fun () -> init() |> map
+            let init = fun () -> init() ||> fun model cmd -> model :> obj, cmd |> Cmd.map Message.Downcast<'Msg, 'Args>
             let view = fun (model: obj) (dispatch: Dispatch<obj>) -> view (model :?> 'Model) dispatch
             let update =
                 match update with
                 | Some update ->
-                    fun (msg: obj) (model: obj) -> update (msg :?> 'Msg) (model :?> 'Model) |> map
+                    fun (msg: obj) (model: obj) -> 
+                        update (msg :?> 'Msg) (model :?> 'Model) 
+                        ||> fun model cmd -> model :> obj, cmd |> Cmd.map Message.Downcast<'CmdMsg, 'Args>
                 | None -> fun _ (model: obj) -> model, []
             let onNavigate =
                 match onNavigate with
                 | Some onNavigate ->
-                    fun (model: obj) navigationParams -> onNavigate (model :?> 'Model) navigationParams |> map
+                    fun (model: obj) navigationParams -> 
+                        onNavigate (model :?> 'Model) navigationParams
+                        ||> fun model cmd -> model :> obj, cmd |> Cmd.map Message.Downcast<'Msg, 'Args>
                 | None -> fun (model: obj) _ -> model, []
             let mapCommand =
                 match mapCommand with
                 | Some mapCommand ->
-                    fun (msg: obj) -> mapCommand (msg :?> 'Msg) |> Cmd.map Navigable<'Msg, 'Args>.Cast
+                    fun (msg: obj) -> mapCommand (msg :?> 'CmdMsg) |> fun cmd -> cmd |> Cmd.map Message.Downcast<'Msg, 'Args>
                 | None -> fun _ -> []
             { Init = init
               Update = update

@@ -31,6 +31,7 @@ module Navigation =
     let navigate name parameters navigationState pages =
         let page = pages |> Map.find name
         let (model, initCmd) = page.Init()
+        let navigationParameters = createNavigationParams parameters navigationState
         let (model, navigateCmd) = page.OnNavigate model navigationParameters
         let pageModel = {
             Name = name
@@ -45,6 +46,7 @@ module Navigation =
                 match previousPages with
                 | previousPage::tail ->
                     let page = pages |> Map.find previousPage.Name
+                    let navigationParameters = createNavigationParams parameters navigationState
                     let (model, navigateCmd) = page.OnNavigate previousPage.Model navigationParameters
                     let previousPage = { previousPage with Model = model }
                     previousPage::tail, navigateCmd
@@ -106,7 +108,7 @@ module Navigation =
         match currentPage navigationState with
         | Some { Name = name; Model = model } ->
             let page = pages |> Map.find name
-            Some (page.View model ((fun msg -> msg :?> 'a) >> PageMsg >> dispatch))
+            Some (page.View model ((fun msg -> msg :?> 'a) >> Message.Message >> Message >> Page >> dispatch))
         | None -> None
 
     let init = { Stack = [] }
@@ -124,17 +126,14 @@ module Program =
 
     let wrapView getState pages userView model dispatch =
         let navigationState = getState model
-        let page = view dispatch navigationState pages
-        let navigation = {
-            Dispatch = NavigationMsg >> dispatch
-            CurrentPage = page }
-        userView model (AppMsg >> dispatch) navigation
+        let currentPage = Navigation.view dispatch navigationState pages
+        userView model (Message.Message >> Message >> App >> dispatch) currentPage
 
     let setState userSetState model dispatch =
-        userSetState model (PageMsg >> dispatch)
+        userSetState model (App >> dispatch)
 
     let subs userSubscribe model =
-        userSubscribe model |> fun cmd -> cmd |> Cmd.map AppMsg
+        userSubscribe model |> fun cmd -> cmd |> Cmd.map App
 
     let makeProgramWithNavigation init update view mapCommand updateState getState pages =
         let pages =

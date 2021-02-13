@@ -6,6 +6,3 @@ module Cmd =
 
     let cast cmd =
         cmd |> Cmd.map (fun (msg: obj) -> msg :?> 'Msg)
-
-    let navigate msg =
-        msg |> NavigationMsg |> Cmd.ofMsg
