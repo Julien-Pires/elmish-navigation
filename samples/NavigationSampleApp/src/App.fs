@@ -55,8 +55,7 @@ let pages = [
     "Home", Home.page
     "CharacterCreation", CharacterCreation.page ]
 
-Program.mkProgram init update view
-|> Program.withNavigation pages updateNavigation (fun model -> model.Navigation) mapCommand
+Program.makeProgramWithNavigation init update view updateNavigation (fun model -> model.Navigation) pages
 |> Program.withConsoleTrace
 |> Program.withReactNativeExpo
 |> Program.run

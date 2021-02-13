@@ -10,12 +10,18 @@
     </Description>
   </PropertyGroup>
 
+   <!-- <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"> -->
+    <!-- <DefineConstants>TRACE</DefineConstants> -->
+    <!-- <PlatformTarget>AnyCPU</PlatformTarget> -->
+    <!-- <OtherFlags>sig:test.fsi</OtherFlags> -->
+  <!-- </PropertyGroup>  -->
+
   <ItemGroup>
-    <Compile Include="Types.fsi" />
+    <!-- <Compile Include="Types.fsi" /> -->
     <Compile Include="Types.fs" />
     <Compile Include="Cmd.fsi" />
     <Compile Include="Cmd.fs" />
-    <Compile Include="Navigation.fsi" />
+    <!-- <Compile Include="Navigation.fsi" /> -->
     <Compile Include="Navigation.fs" />
   </ItemGroup>
 
