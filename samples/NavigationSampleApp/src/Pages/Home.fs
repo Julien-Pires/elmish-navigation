@@ -19,13 +19,13 @@ module Home =
 
     let update msg model =
         match msg with
-        | Create -> model, Navigate "CharacterCreation" |> Cmd.navigate
+        | Create -> model, []
 
-    let view model dispatch navigation =
+    let view model dispatch =
         R.view [] [
             R.button [
                 P.ButtonProperties.Title "Next"
                 P.ButtonProperties.OnPress (fun _ -> dispatch Create)
             ] [] ]
 
-    let page = Page<View, NavigationArgs>.Create(init, view, update)
+    let page: Page<Fable.React.ReactElement, obj> = Page.Create(init, view, update)
