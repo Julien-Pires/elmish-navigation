@@ -30,14 +30,14 @@ module Navigation =
 
     let navigate name parameters navigationState pages =
         let page = pages |> Map.find name
-        let (model, initCmd) = page.Init()
         let navigationParameters = createNavigationParams parameters navigationState
+        let (model, initCmd) = page.Init()
         let (model, navigateCmd) = page.OnNavigate model navigationParameters
         let pageModel = {
             Name = name
             Model = model }
         { navigationState with Stack = pageModel::navigationState.Stack }, 
-        Cmd.batch [initCmd; navigateCmd] |> Cmd.map (Message.Upcast >> Message)
+        [initCmd; navigateCmd] |> Cmd.batch |> Cmd.map Message.Upcast
 
     let navigateBack parameters navigationState pages =
         match navigationState.Stack with
@@ -51,30 +51,23 @@ module Navigation =
                     let previousPage = { previousPage with Model = model }
                     previousPage::tail, navigateCmd
                 | [] -> previousPages, []
-            { navigationState with Stack = previousPages }, cmd |> Cmd.map (Message.Upcast >> Message)
+            { navigationState with Stack = previousPages }, cmd |> Cmd.map Message.Upcast
         | [] -> { navigationState with Stack = [] }, []
 
     let updateMsg userUpdate msg model =
         match msg with
-        | Message (Message.Message msg) ->
-            userUpdate msg model
-            ||> fun model cmd -> model, (cmd |> Cmd.map Effect) 
-        | Effect (Message.Message msg) -> 
-            userUpdate msg model
-            ||> fun model cmd -> model, (cmd |> Cmd.map Message) 
+        | Message msg -> userUpdate msg model
         | _ -> model, []
 
-    let updateCurrentPage page model pageModel navigationState cmd =
+    let updateCurrentPage page pageModel navigationState =
         match navigationState.Stack with
         | _::tail ->
-            { navigationState with Stack = { page with Model = pageModel}::tail }
+            { navigationState with Stack = { page with Model = pageModel }::tail }
         | _ -> navigationState
-        |> fun navigationState -> model, navigationState, cmd
 
-    let updateNavigation pages msg model navigationState cmd =
+    let updateNavigation pages msg navigationState =
         match msg with
-        | Message (Navigation msg)
-        | Effect (Navigation msg) ->
+        | Navigation msg ->
             match msg with
             | Navigate (page, parameters) -> Some (navigate page parameters)
             | NavigateBack parameters -> Some (navigateBack parameters)
@@ -82,64 +75,80 @@ module Navigation =
             |> function
                 | Some navigate ->
                     let (navigationState, cmd) = navigate navigationState pages
-                    model, navigationState, cmd
-                | None -> model, navigationState, cmd
-        | _ -> model, navigationState, cmd
+                    navigationState, cmd
+                | None -> navigationState, []
+        | _ -> navigationState, []
 
-    let update userUpdate mapCommand navigationState pages msg model =
+    let update userUpdate navigationUpdate navigationState pages msg model =
         match msg with
         | App msg ->
-            updateMsg userUpdate msg model
-            ||> fun model cmd -> model, navigationState, cmd
-            |||> updateNavigation pages msg
-            |||> fun model navigationState cmd -> model, navigationState, cmd |> Cmd.map App
+            let model, appCmd = updateMsg userUpdate msg model
+            let navigationState, pagesCmd = updateNavigation pages msg navigationState
+            let navigationUpdateCmd = navigationUpdate navigationState |> Message |> Cmd.ofMsg
+            model, [
+                appCmd |> Cmd.map App
+                pagesCmd |> Cmd.map Page
+                navigationUpdateCmd |> Cmd.map App ] |> Cmd.batch
         | Page msg ->
             match currentPage navigationState with
             | Some page ->
                 let template = pages |> Map.find page.Name
-                updateMsg template.Update (msg |> Command.Downcast<_,_>) page.Model
-                ||> fun model cmd -> model, navigationState, cmd
-                |||> updateCurrentPage page model
-                |||> updateNavigation pages msg
-                |||> fun model navigationState cmd -> model, navigationState, cmd |> Cmd.map (Command.Upcast<_> >> Page)
-            | None -> model, navigationState, []
+                let navigationState, updateCmd = 
+                    let model, cmd = updateMsg template.Update (msg |> Message.Downcast<_,_>) page.Model
+                    (updateCurrentPage page model navigationState), cmd
+                let navigationState, navigationCmd = updateNavigation pages msg navigationState
+                let navigationUpdateCmd = navigationUpdate navigationState |> Message |> Cmd.ofMsg
+                model, [
+                    updateCmd |> Cmd.map (Message.Upcast<_> >> Page)
+                    navigationCmd |> Cmd.map (Message.Upcast<_> >> Page)
+                    navigationUpdateCmd |> Cmd.map App ] |> Cmd.batch
+            | None -> model, []
 
-    let view dispatch navigationState pages = 
+    let view dispatch navigationState pages =
         match currentPage navigationState with
         | Some { Name = name; Model = model } ->
             let page = pages |> Map.find name
-            Some (page.View model ((fun msg -> msg :?> 'a) >> Message.Message >> Message >> Page >> dispatch))
+            Some (page.View model ((fun msg -> msg :?> 'a) >> Message >> Page >> dispatch))
         | None -> None
 
     let init = { Stack = [] }
 
 [<RequireQualifiedAccess>]
 module Program =
-    let init userInit () = 
-        userInit() |> Cmd.map (Message >> App)
+    let wrapInit userInit () = 
+        userInit() ||> fun model cmd -> model, cmd |> Cmd.map App
 
-    let wrapUpdate userUpdate mapCommand getState updateState pages msg model =
+    let wrapUpdate userUpdate getState updateState pages msg model =
         let navigationState = getState model
-        let (model, navigationState, cmd) = Navigation.update userUpdate mapCommand navigationState pages msg model
-        let (model, updateCmd) = updateState navigationState model
-        model, Cmd.batch [cmd; updateCmd |> Cmd.map App]
+        Navigation.update userUpdate updateState navigationState pages msg model
 
     let wrapView getState pages userView model dispatch =
         let navigationState = getState model
         let currentPage = Navigation.view dispatch navigationState pages
-        userView model (Message.Message >> Message >> App >> dispatch) currentPage
+        userView model (Message >> App >> dispatch) currentPage
 
-    let setState userSetState model dispatch =
-        userSetState model (App >> dispatch)
-
-    let subs userSubscribe model =
-        userSubscribe model |> fun cmd -> cmd |> Cmd.map App
-
-    let makeProgramWithNavigation init update view mapCommand updateState getState pages =
+    let mkProgramWithNavigation init update view mapCommand updateState getState pages =
         let pages =
             pages
             |> List.map (fun (name, page) -> (PageName name, page))
             |> Map.ofList
-        let update = wrapUpdate update mapCommand getState updateState pages
-        let view = wrapView getState pages view
-        Program.mkProgram init update view
+        let init = fun () ->
+            init()
+            ||> fun model cmd -> model, cmd |> List.map mapCommand
+        let update = fun msg model ->
+            update msg model
+            ||> fun model cmd -> model, cmd |> List.map mapCommand
+        Program.mkProgram
+            (wrapInit init)
+            (wrapUpdate update getState updateState pages)
+            (wrapView getState pages view)
+
+    let mkSimpleWithNavigation init update view updateState getState pages =
+        let pages =
+            pages
+            |> List.map (fun (name, page) -> (PageName name, page))
+            |> Map.ofList
+        Program.mkProgram
+            (wrapInit init)
+            (wrapUpdate update getState updateState pages)
+            (wrapView getState pages view)

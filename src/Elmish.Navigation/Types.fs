@@ -30,22 +30,9 @@ type Message<'Msg, 'Arg> =
             | Message msg -> Message (msg :?> 'Msg)
             | Navigation msg -> Navigation msg
 
-type Command<'Msg, 'Arg> =
-    | Message of Message<'Msg, 'Arg>
-    | Effect of Message<'Msg, 'Arg>
-    with
-        static member Downcast(cmd) =
-            match cmd with
-            | Message msg -> msg |> Message.Downcast<_,_> |> Message
-            | Effect msg -> msg |> Message.Downcast<_,_> |> Effect
-        static member Upcast(msg: Command<obj, 'Arg>) =
-            match msg with
-            | Message msg -> Message (Message.Upcast<'Msg> msg)
-            | Effect msg -> Effect (Message.Upcast<'Msg> msg)
-
 type ProgramMsg<'Msg, 'Arg> =
-    | App of Command<'Msg, 'Arg>
-    | Page of Command<'Msg, 'Arg>
+    | App of Message<'Msg, 'Arg>
+    | Page of Message<'Msg, 'Arg>
 
 type Navigation<'Page, 'Params> = {
     Dispatch: Dispatch<NavigationMessage<'Params>> 
@@ -63,7 +50,7 @@ type OnNavigationParameters<'Params> = {
 
 type Dispatch<'Msg> = 'Msg -> unit
 
-type Init<'Model, 'Msg, 'Args> = unit -> 'Model * Cmd<Message<'Msg, 'Args>>
+type Init<'Model, 'CmdMsg, 'Args> = unit -> 'Model * Cmd<Message<'CmdMsg, 'Args>>
 
 type MapCommand<'Msg, 'CmdMsg, 'Args> = 'CmdMsg -> Cmd<Message<'Msg, 'Args>>
 
@@ -82,13 +69,13 @@ type Page<'View, 'Args> = {
     with
         static member Create
             (
-                init: Init<'Model, 'Msg, 'Args>,
+                init: Init<'Model, 'CmdMsg, 'Args>,
                 view: View<'Model, 'Msg, 'View>, 
                 ?update: Update<'Model, 'Msg, 'CmdMsg, 'Args>, 
                 ?onNavigate: OnNavigate<'Model, 'Msg, 'Args>,
                 ?mapCommand: MapCommand<'Msg, 'CmdMsg, 'Args>
             ) =
-            let init = fun () -> init() ||> fun model cmd -> model :> obj, cmd |> Cmd.map Message.Downcast<'Msg, 'Args>
+            let init = fun () -> init() ||> fun model cmd -> model :> obj, cmd |> Cmd.map Message.Downcast<'CmdMsg, 'Args>
             let view = fun (model: obj) (dispatch: Dispatch<obj>) -> view (model :?> 'Model) dispatch
             let update =
                 match update with

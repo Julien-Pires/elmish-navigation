@@ -1,8 +1,16 @@
 namespace Elmish.Navigation
 
-[<RequireQualifiedAccess>]
-module Cmd =
-    open Elmish
+type CmdMsg =
+    static member OfMsg (msg) = Message msg
 
-    let cast cmd =
-        cmd |> Cmd.map (fun (msg: obj) -> msg :?> 'Msg)
+    static member Navigate(page, ?args) =
+        match args with
+        | Some args -> NavigateParams (page, args)
+        | None -> Navigate page
+        |> Navigation
+
+    static member NavigateBack(?args) = 
+        match args with
+        | Some args -> NavigateBackParams args
+        | None -> NavigateBack
+        |> Navigation
