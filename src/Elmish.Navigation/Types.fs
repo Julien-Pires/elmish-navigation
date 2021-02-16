@@ -11,6 +11,9 @@ type PageModel = {
 type NavigationState = {
     Stack: PageModel list }
 
+type INavigationModel<'T when 'T :> INavigationModel<'T>> =
+    abstract member UpdateNavigation: NavigationState -> 'T
+
 type NavigationMessage<'Params> =
     | Navigate of string
     | NavigateParams of string * 'Params option

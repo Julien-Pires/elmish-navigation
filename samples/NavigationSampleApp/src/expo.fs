@@ -1,9 +1,9 @@
 namespace Elmish.ReactNative.Expo
 
+open Elmish
 open Elmish.ReactNative
 open Fable.React
 open Fable.Core
-open Elmish
 
 [<RequireQualifiedAccess>]
 module Program =

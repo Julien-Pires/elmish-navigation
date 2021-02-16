@@ -10,29 +10,31 @@ open NavigationSampleApp.Pages
 
 type Model = {
     Navigation: Navigation.NavigationState }
-
-type Msg =
-    | Update of NavigationState
+    with 
+        interface INavigationModel<Model> with
+            member this.UpdateNavigation(state) = { this with Navigation = state }
 
 let init () = 
-    { Navigation = Navigation.init }, []
+    { Navigation = Navigation.init }, CmdMsg.Navigate "Home" |> Cmd.ofMsg
 
 let update msg model =
-    match msg with
-    | Update navigation ->
-        { model with Navigation = navigation }, []
+    model, []
 
 module R = Fable.ReactNative.Helpers
 module P = Fable.ReactNative.Props
 open Fable.ReactNative.Props
 
 let view model dispatch page =
-    R.view[] []
+    R.view[
+        P.ViewProperties.Style [
+            Margin (unbox 200.)
+        ]
+    ] []
 
 let pages = [
     "Home", Home.page ]
 
-Program.mkSimpleWithNavigation init update view Msg.Update (fun model -> model.Navigation) pages
+Program.mkSimpleWithNavigation init update view (fun model -> model.Navigation) pages
 |> Program.withConsoleTrace
 |> Program.withReactNativeExpo
 |> Program.run

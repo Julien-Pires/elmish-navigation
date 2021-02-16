@@ -18,13 +18,15 @@
     "react": "16.13.1",
     "react-dom": "16.13.1",
     "react-native": "https://github.com/expo/react-native/archive/sdk-40.0.1.tar.gz",
-    "react-native-web": "~0.13.12"
+    "react-native-web": "~0.13.12",
+    "remotedev-rn-debugger": "^0.8.4"
   },
   "devDependencies": {
     "@babel/core": "~7.9.0",
     "@babel/preset-env": "^7.12.13",
     "fable-compiler": "^2.13.0",
-    "fable-splitter": "^2.2.1"
+    "fable-splitter": "^2.2.1",
+    "remotedev": "^0.2.9"
   },
   "private": true
 }
