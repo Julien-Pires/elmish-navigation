@@ -1,5 +1,6 @@
 namespace NavigationSampleApp.Pages
 
+open Elmish
 open Fable.ReactNative
 open Elmish.Navigation
 open NavigationSampleApp
@@ -19,7 +20,7 @@ module Home =
 
     let update msg model =
         match msg with
-        | Create -> model, []
+        | Create -> model, CmdMsg.NavigateBack() |> Cmd.ofMsg
 
     let view model dispatch =
         R.view [] [

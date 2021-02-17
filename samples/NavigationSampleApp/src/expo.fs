@@ -19,12 +19,14 @@ module Program =
         registerRootComponent <| unbox JsInterop.jsConstructor<App>
 
         let setState m d =
-             match appState with
-             | Some state ->
-                state.setState { state with render = fun () -> (Program.view program) m d }
-             | _ ->
-                appState <- Some { render = fun () -> (Program.view program) m d
-                                   setState = ignore }
+            match appState with
+            | Some state ->
+                appState <- Some { state with render = fun () -> (Program.view program) m d }
+                state.setState appState.Value
+            | _ ->
+                appState <- Some { 
+                    render = fun () -> (Program.view program) m d
+                    setState = ignore }
 
         program
         |> Program.withSetState setState

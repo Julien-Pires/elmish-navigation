@@ -141,9 +141,10 @@ module Program =
         Navigation.update userUpdate navigationState pages msg model
 
     let wrapView getState pages userView model dispatch =
+        printfn "Call view => %A" model
         let navigationState = getState model
         let currentPage = Navigation.view dispatch navigationState pages
-        userView model (Message >> App >> dispatch) None
+        userView model (Message >> App >> dispatch) currentPage
 
     let mkProgramWithNavigation init update view mapCommand getState pages =
         let pages =
