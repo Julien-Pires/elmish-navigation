@@ -2,33 +2,13 @@ namespace Elmish.Navigation
 
 open Elmish
 
-type Update<'a> =
-    | Update of 'a
-    | NoUpdate
-
-[<RequireQualifiedAccess>]
-module Update =
-    let bind f m =
-        match m with
-        | Update x -> f x
-        | NoUpdate -> NoUpdate
-
-    let defaultValue value m =
-        match m with
-        | Update x -> x
-        | NoUpdate -> value
-
 [<RequireQualifiedAccess>]
 module Navigation =
-    let (|Navigate|_|) = function
-        | Navigate page -> Some(PageName page, None)
-        | NavigateParams (page, parameters) -> Some(PageName page, parameters)
-        | _ -> None
-
-    let (|NavigateBack|_|) = function
-        | NavigateBack -> Some None
-        | NavigateBackParams parameters -> Some parameters
-        | _ -> None
+    let (|Navigate|NavigateBack|) = function
+        | Navigate page -> Navigate (PageName page, None)
+        | NavigateParams (page, parameters) -> Navigate (PageName page, parameters)
+        | NavigateBack -> NavigateBack None
+        | NavigateBackParams parameters -> NavigateBack parameters
 
     let currentPage navigationState =
         match navigationState.Stack with
@@ -70,23 +50,11 @@ module Navigation =
             { navigationState with Stack = previousPages }, cmd |> Cmd.map Message.Upcast
         | [] -> { navigationState with Stack = [] }, []
 
-    let applyUpdate userUpdate msg model =
-        match msg with
-        | Message msg -> 
-            userUpdate msg model 
-            ||> fun model cmd -> Update (model, cmd)
-        | _ -> NoUpdate
-
     let applyNavigation pages msg navigationState =
         match msg with
-        | Navigation (Navigate (page, parameters)) -> Some (navigate page parameters)
-        | Navigation (NavigateBack parameters) -> Some (navigateBack parameters)
-        | _ -> None
-        |> function
-            | Some navigate ->
-                let (navigationState, cmd) = navigate navigationState pages
-                Update (navigationState, cmd)
-            | None -> NoUpdate
+        | Navigate (page, parameters) -> navigate page parameters
+        | NavigateBack parameters -> navigateBack parameters
+        |> fun f -> f navigationState pages
 
     let updateCurrentPage page navigationState model =
         match navigationState.Stack with
@@ -95,32 +63,23 @@ module Navigation =
         | _ -> navigationState
 
     let update userUpdate navigationState pages msg (model: 'Y when 'Y :> INavigationModel<'Y>) =
-        (match msg with
-        | App msg ->
-            let model, cmd =
-                applyUpdate userUpdate msg model
-                |> Update.defaultValue (model, [])
-            msg, model, navigationState, cmd |> Cmd.map App
-        | Page msg ->
+        match msg with
+        | App (Message msg) ->
+            let model, cmd = userUpdate msg model
+            model, cmd |> Cmd.map App
+        | Page (Message msg) ->
             match currentPage navigationState with
             | Some page ->
                 let template = pages |> Map.find page.Name
-                let model, navigationState, cmd =
-                    applyUpdate template.Update (msg |> Message.Downcast<_,_>) page.Model
-                    |> Update.bind (fun (model, cmd) -> Update (updateCurrentPage page navigationState model, cmd))
-                    |> Update.bind (fun (state, cmd) -> (model.UpdateNavigation(state), state, cmd) |> Update)
-                    |> Update.defaultValue (model, navigationState, [])
-                msg, model, navigationState, cmd |> Cmd.map (Message.Upcast<_> >> Page)
-            | None -> msg, model, navigationState, [])
-        |> fun (msg, model, navigationState, updateCmd) ->
-            let model, navigationCmd =
-                navigationState
-                |> applyNavigation pages msg
-                |> Update.bind (fun (state, cmd) -> (model.UpdateNavigation(state), cmd) |> Update)
-                |> Update.defaultValue (model, [])
-            model, Cmd.batch [
-                updateCmd
-                navigationCmd |> Cmd.map Page ]
+                template.Update (msg :> obj) page.Model
+                ||> fun model cmd -> updateCurrentPage page navigationState model, cmd
+                ||> fun state cmd -> model.UpdateNavigation(state), cmd |> Cmd.map (Message.Upcast<_> >> Page)
+            | None -> model, []
+        | App (Navigation msg)
+        | Page (Navigation msg) ->
+            navigationState
+            |> applyNavigation pages msg
+            ||> fun state cmd -> model.UpdateNavigation(state), cmd |> Cmd.map Page
 
     let view dispatch navigationState pages =
         match currentPage navigationState with
@@ -141,7 +100,6 @@ module Program =
         Navigation.update userUpdate navigationState pages msg model
 
     let wrapView getState pages userView model dispatch =
-        printfn "Call view => %A" model
         let navigationState = getState model
         let currentPage = Navigation.view dispatch navigationState pages
         userView model (Message >> App >> dispatch) currentPage
