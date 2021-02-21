@@ -5,12 +5,12 @@ type CmdMsg =
 
     static member Navigate(page, ?args) =
         match args with
-        | Some args -> NavigateParams (page, args)
+        | Some args -> NavigateParams (page, Some args)
         | None -> Navigate page
         |> Navigation
 
     static member NavigateBack(?args) = 
         match args with
-        | Some args -> NavigateBackParams args
+        | Some args -> NavigateBackParams (Some args)
         | None -> NavigateBack
         |> Navigation
