@@ -1,14 +1,20 @@
 namespace Calendar.Components
 
+open Fable.Core
+open Fable.Core.JsInterop
+open Fable.React
+
 module R = Fable.ReactNative.Helpers
 module P = Fable.ReactNative.Props
 
 module Props =
     type TextInputWithError =
-        | Text of string
         | Label of string
         | Error of string list
-        | OnChange of (string -> unit)
+
+    type Checkbox =
+        | IsChecked of bool
+        | OnPress of (bool -> unit)
 
 open Props
 
@@ -18,16 +24,15 @@ module Helpers =
         | Some x -> x
         | None -> defaultValue
 
-    let textInputWithLabel props =
-        let text = props |> findProp (function Text text -> Some text | _ -> None) ""
+    let inputBox props childrens =
         let label = props |> findProp (function Label text -> Some (Some text) | _ -> None) None
         let errors = props |> findProp (function Error errors -> Some errors | _ -> None) []
-        let onChange = props |> findProp (function OnChange change -> Some change | _ -> None) ignore
         R.view [] [
             if label.IsSome then
                 R.text [] label.Value
-            R.textInput [
-                P.TextInput.Value text
-                P.TextInput.OnChangeText onChange ]
+            yield! childrens
             if errors.Length > 0 then
                 yield! errors |> List.map (fun error -> R.text [] error) ]
+
+    let inline checkbox (props : Props.Checkbox list) : ReactElement =
+        ofImport "default" "react-native-bouncy-checkbox" (keyValueList CaseRules.LowerFirst props) []

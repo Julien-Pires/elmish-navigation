@@ -2,20 +2,20 @@ namespace NavigationSampleApp.Pages
 
 open System
 open Elmish
-open Fable.ReactNative
 open Elmish.Navigation
+open Fable.ReactNative
 open NavigationSampleApp
-open Calendar.Helpers
 open Calendar.Components
 open Calendar.Modules
 
-module AddEvent =
-    module R = Helpers
-    module P = Props
+module R = Helpers
+module P = Props
 
+module AddEvent =
     type InputName =
         | Name
         | Description
+        | AllDay
         | Start
         | End
 
@@ -26,73 +26,98 @@ module AddEvent =
         | Update of Form<InputName, EventError>
         | Validate
 
+    let onError = function
+        | NameEmpty -> (Name, "Name cannot be empty")
+        | EndDateInvalid -> (End, "End date must be superior to start date")
+
     let init () = {
-        Form = 
-            Form.empty
-            |> Form.addInput {
+        Form =
+            Form.empty onError
+            |> Form.input {
                 Name = Name
                 Label = "Name"
-                DefaultValue = "" }
-            |> Form.addInput {
+                Default = "" }
+            |> Form.input {
                 Name = Description
                 Label = "Description"
-                DefaultValue = "" }
-            |> Form.addInput {
+                Default = "" }
+            |> Form.input {
+                Name = AllDay
+                Label = "All day"
+                Default = false }
+            |> Form.input {
                 Name = Start
                 Label = "Start date"
-                DefaultValue = DateTime.Now }
-            |> Form.addInput {
+                Default = DateTime.Now }
+            |> Form.input {
                 Name = End
                 Label = "End date"
-                DefaultValue = DateTime.Now.AddHours(1.) }
-            |> Form.addErrors [
-                NameEmpty, Name, "Name cannot be empty"
-                EndDateInvalid, End, "End date must be superior to start date" ]}, []
+                Default = DateTime.Now.AddHours(1.) }}, []
 
     let update msg model =
         match msg with
         | Update form -> { model with Form = form }, []
         | Validate ->
-            let name = model.Form |> Form.getInput Name
-            let description = model.Form |> Form.getInput Description
-            let startDate = model.Form |> Form.getInput Start
-            let result = Event.createEventA (name.Value.Get()) (description.Value.Get()) (startDate.Value.Get()) DateTime.Now false
+            let name = model.Form |> Form.getValue Name
+            let description = model.Form |> Form.getValue Description
+            let allDay = model.Form |> Form.getValue AllDay
+            let startDate = model.Form |> Form.getValue Start
+            let endDate = model.Form |> Form.getValue End
+            let result = 
+                Event.createEventA name description startDate endDate allDay
             match result with
             | Ok event ->
                 model, CmdMsg.NavigateBack(EventAdded event) |> Cmd.ofMsg
             | Errors errors ->
-                let form = 
+                let form =
                     model.Form
                     |> Form.resetErrors
-                    |> Form.setErrors errors
+                    |> Form.applyErrors errors
                 { model with Form = form }, []
 
-    let textInput (input: Input) onChange =
-        R.textInputWithLabel [
-            P.TextInputWithError.Label input.Label
-            P.TextInputWithError.Text (input.Value.Get())
-            P.TextInputWithError.OnChange onChange
-            if input.Errors.Length > 0 then
-                P.TextInputWithError.Error input.Errors ]
+    let inputBox label errors childrens =
+        R.inputBox [
+            P.TextInputWithError.Label label
+            P.TextInputWithError.Error errors ] childrens
 
-    let dateInput (input: Input) onChange =
-        R.textInputWithLabel [
-            P.TextInputWithError.Label input.Label
-            P.TextInputWithError.Text (input.Value.Get().ToString())
-            P.TextInputWithError.OnChange onChange
-            if input.Errors.Length > 0 then
-                P.TextInputWithError.Error input.Errors ]
+    let textInput label value errors onChange =
+        inputBox label errors [
+            R.textInput [
+                P.TextInput.Value value
+                P.TextInput.OnChangeText onChange  ]]
+
+    let dateInput label value errors onChange =
+        inputBox label errors [
+            R.textInput [
+                P.TextInput.Value value
+                P.TextInput.OnChangeText onChange  ]]
+
+    let checkBox label value errors onChange =
+        inputBox label errors [
+            R.checkbox [
+                P.Checkbox.IsChecked value
+                P.Checkbox.OnPress onChange ]]
 
     let view model dispatch =
         R.view [] [
-            let name = model.Form |> Form.getInput Name
-            textInput name (fun arg -> dispatch <| Update (model.Form |> Form.setValue Name arg))
-
-            let description = model.Form |> Form.getInput Description
-            textInput description (fun arg -> dispatch <| Update (model.Form |> Form.setValue Description arg))
-
-            let startDate = model.Form |> Form.getInput Start
-            dateInput startDate (fun arg -> dispatch <| Update (model.Form |> Form.setValue Start arg))
+            R.form [
+                P.Form model.Form
+                P.OnChange (Update >> dispatch) ] [
+                R.formInput [
+                    P.Name Name
+                    P.Render (textInput "Name") ]
+                R.formInput [
+                    P.Name Description
+                    P.Render (textInput "Description") ]
+                R.formInput [
+                    P.Name AllDay
+                    P.Render (checkBox "All day") ]
+                R.formInput [
+                    P.Name Start
+                    P.Render (dateInput "Start date") ]
+                R.formInput [
+                    P.Name End
+                    P.Render (dateInput "End date") ]] 
 
             R.button [
                 P.ButtonProperties.Title "Add"

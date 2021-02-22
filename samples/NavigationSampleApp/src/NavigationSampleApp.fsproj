@@ -8,9 +8,10 @@
   <ItemGroup>
     <Compile Include="Modules/Core.fs" />
     <Compile Include="Modules/Date.fs" />
-    <Compile Include="Helpers/Form.fs" />
+    <Compile Include="Components/Helpers.fs" />
     <Compile Include="Components/SafeAreaView.fs" />
     <Compile Include="Components/Input.fs" />
+    <Compile Include="Components/Form.fs" />
     <Compile Include="Pages/Types.fs" />
     <Compile Include="Pages/Home.fs" />
     <Compile Include="Pages/AddEvent.fs" />
