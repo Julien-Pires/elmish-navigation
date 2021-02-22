@@ -7,12 +7,13 @@
 
   <ItemGroup>
     <Compile Include="Modules/Core.fs" />
-    <Compile Include="Modules/Date.fs" />
+    <Compile Include="Modules/Event.fs" />
     <Compile Include="Components/Helpers.fs" />
     <Compile Include="Components/SafeAreaView.fs" />
     <Compile Include="Components/Input.fs" />
     <Compile Include="Components/Form.fs" />
     <Compile Include="Pages/Types.fs" />
+    <Compile Include="Pages/Store.fs" />
     <Compile Include="Pages/Home.fs" />
     <Compile Include="Pages/AddEvent.fs" />
     <Compile Include="expo.fs" />

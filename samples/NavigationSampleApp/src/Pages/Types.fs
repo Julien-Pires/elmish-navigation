@@ -1,4 +1,4 @@
-namespace NavigationSampleApp
+namespace Calendar.Pages
 
 open Calendar.Modules
 

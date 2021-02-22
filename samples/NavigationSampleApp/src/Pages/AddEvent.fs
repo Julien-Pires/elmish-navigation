@@ -1,10 +1,9 @@
-namespace NavigationSampleApp.Pages
+namespace Calendar.Pages
 
 open System
 open Elmish
 open Elmish.Navigation
 open Fable.ReactNative
-open NavigationSampleApp
 open Calendar.Components
 open Calendar.Modules
 
@@ -63,8 +62,7 @@ module AddEvent =
             let allDay = model.Form |> Form.getValue AllDay
             let startDate = model.Form |> Form.getValue Start
             let endDate = model.Form |> Form.getValue End
-            let result = 
-                Event.createEventA name description startDate endDate allDay
+            let result = Event.createEventA name description startDate endDate allDay
             match result with
             | Ok event ->
                 model, CmdMsg.NavigateBack(EventAdded event) |> Cmd.ofMsg
@@ -89,7 +87,7 @@ module AddEvent =
     let dateInput label value errors onChange =
         inputBox label errors [
             R.textInput [
-                P.TextInput.Value value
+                P.TextInput.Value (value.ToString())
                 P.TextInput.OnChangeText onChange  ]]
 
     let checkBox label value errors onChange =
@@ -115,9 +113,10 @@ module AddEvent =
                 R.formInput [
                     P.Name Start
                     P.Render (dateInput "Start date") ]
-                R.formInput [
-                    P.Name End
-                    P.Render (dateInput "End date") ]] 
+                if model.Form |> Form.getValue AllDay |> not then
+                    R.formInput [
+                        P.Name End
+                        P.Render (dateInput "End date") ]]
 
             R.button [
                 P.ButtonProperties.Title "Add"

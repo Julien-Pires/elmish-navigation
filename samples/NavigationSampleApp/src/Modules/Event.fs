@@ -2,25 +2,24 @@ namespace Calendar.Modules
 
 open System
 
-type SingleDate = private SingleDate of DateTime
-
-type RangeDate = private {
+type RangeDate = {
     Start: DateTime 
     End: DateTime }
 
 type Date =
-    | AllDay of SingleDate
-    | Range of RangeDate
+    | Day of RangeDate
+    | Hours of RangeDate
 
 type EventError =
     | NameEmpty
     | EndDateInvalid
 
-type EventName = private EventName of string
+type EventName = EventName of string
 
-type EventDescription = private EventDescription of string
+type EventDescription = EventDescription of string
 
 type Event = {
+    Id: string
     Name: EventName
     Description: EventDescription
     Date: Date }
@@ -28,18 +27,17 @@ type Event = {
 module Event =
     open ResultSymbols
 
-    let createAllDay date =
-        AllDay (SingleDate date)
-
     let createRange startDate endDate =
-        match endDate < startDate with
-        | true -> Ok <| Range { Start = startDate; End = endDate }
+        match endDate > startDate with
+        | true -> Ok { Start = startDate; End = endDate }
         | false -> Errors [ EndDateInvalid ]
 
     let createDate startDate endDate isAllDay =
-        match isAllDay with
-        | true -> Ok (createAllDay startDate)
-        | false -> createRange startDate endDate
+        createRange startDate endDate
+        |> Result.bind (fun range ->
+            match isAllDay with
+            | true -> Ok(Day range)
+            | false -> Ok(Hours range))
 
     let createName name =
         if String.IsNullOrWhiteSpace name then
@@ -51,6 +49,7 @@ module Event =
         Ok (EventDescription description)
 
     let createEvent name description date = {
+        Id = Guid.NewGuid().ToString()
         Name = name
         Description = description
         Date = date }
@@ -60,7 +59,6 @@ module Event =
         let descriptionResult = createDescription description
         let dateResult = createDate startDate endDate isAllDay
         createEvent 
-            <!> nameResult 
+            <!> nameResult
             <*> descriptionResult 
             <*> dateResult
-        
