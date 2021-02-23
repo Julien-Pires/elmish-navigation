@@ -1,10 +1,11 @@
-namespace Calendar.Pages
+namespace Calendar.UI.Pages
 
 open System
 open Elmish
 open Fable.ReactNative
 open Elmish.Navigation
 open Calendar.Modules
+open Calendar.UI
 
 module Home =
     module R = Fable.ReactNative.Helpers

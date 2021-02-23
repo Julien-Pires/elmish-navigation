@@ -8,14 +8,21 @@
   <ItemGroup>
     <Compile Include="Modules/Core.fs" />
     <Compile Include="Modules/Event.fs" />
-    <Compile Include="Components/Helpers.fs" />
-    <Compile Include="Components/SafeAreaView.fs" />
-    <Compile Include="Components/Input.fs" />
-    <Compile Include="Components/Form.fs" />
-    <Compile Include="Pages/Types.fs" />
-    <Compile Include="Pages/Store.fs" />
-    <Compile Include="Pages/Home.fs" />
-    <Compile Include="Pages/AddEvent.fs" />
+    <Compile Include="UI/Types.fs" />
+    <Compile Include="UI/Store.fs" />
+    <Compile Include="UI/Styles/Theme.fs" />
+    <Compile Include="UI/Styles/Styles.fs" />
+    <Compile Include="UI/Elements/Checkbox.fs" />
+    <Compile Include="UI/Elements/Datetime.fs" />
+    <Compile Include="UI/Components/Atoms/Surface.fs" />
+    <Compile Include="UI/Components/Helpers.fs" />
+    <Compile Include="UI/Components/SafeAreaView.fs" />
+    <Compile Include="UI/Components/Form/Form.fs" />
+    <Compile Include="UI/Components/Form/Field.fs" />
+    <Compile Include="UI/Components/Form/Label.fs" />
+    <Compile Include="UI/Components/Form/Input.fs" />
+    <Compile Include="UI/Pages/Home.fs" />
+    <Compile Include="UI/Pages/AddEvent.fs" />
     <Compile Include="expo.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>

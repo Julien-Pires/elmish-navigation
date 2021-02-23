@@ -1,4 +1,4 @@
-namespace Calendar.Components
+namespace Calendar.UI.Components
 
 module ComponentHelpers =
     let findProp prop defaultValue props =

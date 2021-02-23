@@ -3,8 +3,8 @@ namespace Calendar.Modules
 open System
 
 type RangeDate = {
-    Start: DateTime 
-    End: DateTime }
+    Start: DateTimeOffset
+    End: DateTimeOffset }
 
 type Date =
     | Day of RangeDate

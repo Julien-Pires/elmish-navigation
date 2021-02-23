@@ -6,7 +6,7 @@ open Elmish.ReactNative
 open Elmish.ReactNative.Expo
 open Elmish.Navigation
 open Fable.ReactNative
-open Calendar.Pages
+open Calendar.UI.Pages
 
 type Model = {
     Navigation: Navigation.NavigationState }

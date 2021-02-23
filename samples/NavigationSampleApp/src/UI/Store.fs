@@ -1,4 +1,4 @@
-namespace Calendar.Pages
+namespace Calendar.UI
 
 open System
 open Calendar.Modules
