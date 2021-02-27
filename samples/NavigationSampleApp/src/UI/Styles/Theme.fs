@@ -5,4 +5,5 @@ module Theme =
         Primary = "#4F3149"
         PrimaryVariant = "#372639"
         Surface = "#FFFFFF"
-        OnSurface = "#F5F4F5" |}
+        OnSurface = "#F5F4F5"
+        Error = "#B71C1C" |}

@@ -22,11 +22,12 @@ let update msg model =
 
 module R = Fable.ReactNative.Helpers
 module P = Fable.ReactNative.Props
-open Fable.ReactNative.Props
+module D = Calendar.UI.Design.Design
  
 let view model dispatch page =
-    R.SafeAreaView [] [
-        page |> Option.defaultValue (R.view[][]) ]
+    D.background[
+        R.SafeAreaView [] [
+            page |> Option.defaultValue (R.view[][]) ]]
 
 let pages = [
     "Home", Home.page

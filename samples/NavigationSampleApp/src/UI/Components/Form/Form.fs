@@ -6,17 +6,46 @@ open Fable.ReactNative
 type IValue =
     abstract member Value : unit -> 'a
 
+type IInputState =
+    abstract member Get: 'a -> 'b -> 'b
+    abstract member Set: 'a -> 'b -> IInputState
+
 type Form<'name, 'error when 'name: comparison> = {
     Fields: Map<'name, IValue>
-    Errors: 'error list }
+    Errors: 'error list
+    State: Map<'name, IInputState> }
 
 module Form =
     let empty = {
         Fields = Map.empty
-        Errors = [] }
+        Errors = []
+        State = Map.empty }
 
     let buildValue value =
         { new IValue with  member __.Value() = (value :> obj) :?> 'a }
+
+    let rec initState (state: Map<_, IValue>) =
+        { new IInputState with
+            member __.Get key defaultValue =
+                let key = (key :> obj) :?> 'a
+                match state |> Map.tryFind key with
+                | Some x -> x.Value()
+                | None -> defaultValue
+
+            member __.Set key value =
+                let key = (key :> obj) :?> 'a
+                let value = buildValue value
+                let newState = state |> Map.add key value
+                initState newState }
+
+    let getInputState id form =
+        match form.State |> Map.tryFind id with
+        | Some state -> state
+        | None -> initState Map.empty
+
+    let setInputState id state form =
+        let state = form.State |> Map.add id state
+        { form with State = state }
 
     let getRawValue name form =
         form.Fields |> Map.tryFind name
@@ -44,7 +73,7 @@ module Props =
 type FormElements<'name, 'value when 'name: comparison> =
     | Control of ReactElement
     | Container of ((FormElements<'name, 'value> -> ReactElement) -> ReactElement)
-    | Input of (IValue option -> (IValue -> unit) -> ReactElement) * 'name
+    | Input of (IValue option -> IInputState -> ((IValue * IInputState) -> unit) -> ReactElement) * 'name
     | Error of (string -> ReactElement) * 'name
 
 module Helpers =
@@ -56,7 +85,12 @@ module Helpers =
         | Container childrens -> childrens (walkElement onChange errorHandlers form)
         | Input (input, id) ->
             let value = form |> Form.getRawValue id
-            input value (fun x -> form |> Form.setValue id x |> onChange)
+            let state = form |> Form.getInputState id
+            input value state (fun (value, state) -> 
+                form 
+                |> Form.setInputState id state
+                |> Form.setValue id value 
+                |> onChange)
         | Error (label, labelId) ->
             errorHandlers
             |> List.tryPick (fun (id, handler) -> if labelId = id then Some handler else None)

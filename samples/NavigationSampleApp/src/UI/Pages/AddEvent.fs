@@ -6,13 +6,12 @@ open Elmish.Navigation
 open Fable.ReactNative
 open Calendar.UI
 open Calendar.UI.Components
-open Calendar.UI.Components.Atoms
 open Calendar.Modules
 
 module AddEvent =
     module R = Helpers
     module P = Props
-    module C = Components
+    module D = Calendar.UI.Design.Design
 
     type InputName =
         | Name
@@ -48,34 +47,27 @@ module AddEvent =
                 { model with Form = Form.setErrors errors model.Form }, []
 
     let view model dispatch =
-        C.surface [
-            R.scrollView [] [
+        D.background [
+            D.header [
+                R.view [
+                    P.ViewProperties.Style [ P.FlexStyle.Height (unbox 20.)]] []
+            ]
+            D.surface [
+                D.SurfaceProperties.Scrollable true ] [
                 R.form [
                     P.Form model.Form
                     P.OnChange (Update >> dispatch)
                     P.Errors[
                         Name, function NameEmpty -> Some "Name cannot be empty" | _ -> None
                         End, function EndDateInvalid -> Some "End date must be superior to start date" | _ -> None ] ] [
-                    Field.block [] [
-                        Label.label "Name" []
-                        Input.text Name []
-                        Label.error Name [] ]
-                    Field.block [] [
-                        Label.label "Description" []
-                        Input.multiline Description [] ]
-                    Field.block [] [
-                        Label.label "All day" []
-                        Input.checkbox AllDay [] ]
-                    Field.block [] [
-                        Label.label "Start date" []
-                        Input.datetime Start [] ]
-                    Field.block [] [
-                        Label.label "End date" []
-                        Input.datetime End []
-                        Label.error End [] ]]
+                    D.textInput Name "Name" []
+                    D.switch AllDay "AllDay" []
+                    D.datePicker Start "Start Date" []
+                    D.datePicker End "End Date" []
+                    D.textArea Description "Description" [] ]
 
                 R.button [
                     P.ButtonProperties.Title "Add"
-                    P.ButtonProperties.OnPress (fun _ -> dispatch Validate) ] []] ]
+                    P.ButtonProperties.OnPress (fun _ -> dispatch Validate) ] [] ]]
 
     let page = Page.Create(init, view, update)
