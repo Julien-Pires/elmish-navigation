@@ -14,7 +14,7 @@ module AddEvent =
     module D = Calendar.UI.Design.Design
 
     type InputName =
-        | Name
+        | Title
         | Description
         | AllDay
         | Start
@@ -34,12 +34,12 @@ module AddEvent =
         match msg with
         | Update form -> { model with Form = form }, []
         | Validate ->
-            let name = model.Form |> Form.getValue Name ""
+            let title = model.Form |> Form.getValue Title ""
             let description = model.Form |> Form.getValue Description ""
             let allDay = model.Form |> Form.getValue AllDay false
             let startDate = model.Form |> Form.getValue Start DateTimeOffset.Now
             let endDate = model.Form |> Form.getValue End (DateTimeOffset.Now.AddHours(1.))
-            let result = Event.createEventA name description startDate endDate allDay
+            let result = Event.createEventA title description startDate endDate allDay
             match result with
             | Ok event ->
                 model, CmdMsg.NavigateBack(EventAdded event) |> Cmd.ofMsg
@@ -58,9 +58,10 @@ module AddEvent =
                     P.Form model.Form
                     P.OnChange (Update >> dispatch)
                     P.Errors[
-                        Name, function NameEmpty -> Some "Name cannot be empty" | _ -> None
+                        Title, function NameEmpty -> Some "Name cannot be empty" | _ -> None
                         End, function EndDateInvalid -> Some "End date must be superior to start date" | _ -> None ] ] [
-                    D.textInput Name "Name" []
+                    D.textInput Title "Title" [
+                        Input.Placeholder "Write the title" ]
                     D.switch AllDay "AllDay" []
                     D.datePicker Start "Start Date" []
                     D.datePicker End "End Date" []

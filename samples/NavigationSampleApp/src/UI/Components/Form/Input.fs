@@ -11,8 +11,9 @@ module Input =
     module H = ComponentHelpers
 
     type Text =
-        | Default of string
         | Style of IStyle list
+        | NoTextStyle of IStyle list
+        | Placeholder of string
 
     type Checkbox =
         | Default of bool
@@ -28,13 +29,16 @@ module Input =
     let private buildText multiline id props =
         let render = fun (value: IValue option) state onChange ->
             let style = props |> H.findProp (function Text.Style style -> Some style | _ -> None) []
-            let defaultValue = props |> H.findProp (function Text.Default text -> Some text | _ -> None) ""
-            let value = match value with Some x -> x.Value() | _ -> defaultValue
+            let emptyStyle = props |> H.findProp (function Text.Style style -> Some style | _ -> None) []
+            let placeholder = props |> H.findProp (function Text.Placeholder text -> Some text | _ -> None) ""
+            let value = match value with Some x -> x.Value() | _ -> ""
+            printfn "%A %A" id (String.IsNullOrWhiteSpace value)
             R.textInput [
                 P.TextInput.Value value
                 P.TextInput.Multiline multiline
+                P.TextInput.Placeholder placeholder
                 P.TextInput.OnChangeText ((fun arg -> Form.buildValue arg, state) >> onChange)
-                P.TextInput.TextInputProperties.Style style ]
+                P.TextInput.TextInputProperties.Style (if String.IsNullOrWhiteSpace value then emptyStyle else style) ]
         Input (render, id)
 
     let text id props = buildText false id props

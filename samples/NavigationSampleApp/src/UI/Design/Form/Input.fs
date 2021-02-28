@@ -5,7 +5,8 @@ open Calendar.UI.Components
 
 module Design =
     let inputBlock id label input =
-        Field.block [] [
+        Field.block [
+            Field.Style Styles.field ] [
             Design.label label
             input
             Design.error id ]
@@ -13,12 +14,12 @@ module Design =
     let textInput id label props =
         inputBlock id label (Input.text id [
             yield! props
-            Input.Text.Style Styles.textInput ])
+            Input.Style Styles.textInput ])
     
     let textArea id label props = 
         inputBlock id label (Input.multiline id [
             yield! props
-            Input.Text.Style Styles.textInput ])
+            Input.Text.Style Styles.textArea ])
 
     let switch id label props = 
         inputBlock id label (Input.switch id [

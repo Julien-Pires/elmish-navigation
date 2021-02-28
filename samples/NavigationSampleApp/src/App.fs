@@ -26,8 +26,8 @@ module D = Calendar.UI.Design.Design
  
 let view model dispatch page =
     D.background[
-        R.SafeAreaView [] [
-            page |> Option.defaultValue (R.view[][]) ]]
+        R.SafeAreaView [] []
+        page |> Option.defaultValue (R.view[][]) ]
 
 let pages = [
     "Home", Home.page

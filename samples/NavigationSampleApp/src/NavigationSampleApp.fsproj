@@ -11,6 +11,7 @@
     <Compile Include="UI/Types.fs" />
     <Compile Include="UI/Store.fs" />
     <Compile Include="UI/Styles/Theme.fs" />
+    <Compile Include="UI/Styles/Font.fs" />
     <Compile Include="UI/Styles/Styles.fs" />
     <Compile Include="UI/Components/Helpers.fs" />
     <Compile Include="UI/Components/SafeAreaView.fs" />
