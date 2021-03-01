@@ -1,7 +1,7 @@
 namespace Elmish.Navigation
 
-type CmdMsg =
-    static member OfMsg (msg) = Message msg
+type Msg =
+    static member Of (msg) = Message msg
 
     static member Navigate(page, ?args) =
         match args with

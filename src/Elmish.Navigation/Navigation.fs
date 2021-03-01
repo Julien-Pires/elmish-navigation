@@ -95,16 +95,16 @@ module Program =
     let wrapInit userInit () = 
         userInit() ||> fun model cmd -> model, cmd |> Cmd.map App
 
-    let wrapUpdate userUpdate getState pages msg model =
-        let navigationState = getState model
+    let wrapUpdate userUpdate pages msg (model: 'Y when 'Y :> INavigationModel<'Y>) =
+        let navigationState = model.GetNavigation()
         Navigation.update userUpdate navigationState pages msg model
 
-    let wrapView getState pages userView model dispatch =
-        let navigationState = getState model
+    let wrapView pages userView (model: 'Y when 'Y :> INavigationModel<'Y>) dispatch =
+        let navigationState = model.GetNavigation()
         let currentPage = Navigation.view dispatch navigationState pages
         userView model (Message >> App >> dispatch) currentPage
 
-    let mkProgramWithNavigation init update view mapCommand getState pages =
+    let mkProgramWithNavigation init update view mapCommand pages =
         let pages =
             pages
             |> List.map (fun (name, page) -> (PageName name, page))
@@ -117,15 +117,15 @@ module Program =
             ||> fun model cmd -> model, cmd |> List.map mapCommand
         Program.mkProgram
             (wrapInit init)
-            (wrapUpdate update getState pages)
-            (wrapView getState pages view)
+            (wrapUpdate update pages)
+            (wrapView pages view)
 
-    let mkSimpleWithNavigation init update view getState pages =
+    let mkSimpleWithNavigation init update view pages =
         let pages =
             pages
             |> List.map (fun (name, page) -> (PageName name, page))
             |> Map.ofList
         Program.mkProgram
             (wrapInit init)
-            (wrapUpdate update getState pages)
-            (wrapView getState pages view)
+            (wrapUpdate update pages)
+            (wrapView pages view)
