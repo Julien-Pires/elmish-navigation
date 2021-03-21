@@ -1,6 +1,9 @@
 namespace Elmish.Navigation
 
-type Msg =
+open Elmish
+
+[<RequireQualifiedAccess>]
+type CmdMsg =
     static member Of (msg) = Message msg
 
     static member Navigate(page, ?args) =
@@ -14,3 +17,11 @@ type Msg =
         | Some args -> NavigateBackParams (Some args)
         | None -> NavigateBack
         |> Navigation
+
+[<RequireQualifiedAccess>]
+type Cmd =
+    static member Of (msg) = (CmdMsg.Of >> Cmd.ofMsg) msg
+
+    static member Navigate(page, ?args) = CmdMsg.Navigate(page, args) |> Cmd.ofMsg
+
+    static member NavigateBack(?args) = CmdMsg.NavigateBack(args) |> Cmd.ofMsg

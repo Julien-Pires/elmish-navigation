@@ -1,17 +1,26 @@
 namespace Elmish.Navigation
+
   open Elmish
 
   module Navigation = begin
-    val init : NavigationState
+    val empty : NavigationState
   end
 
   module Program = begin
-    val makeProgramWithNavigation :
-      init:('a -> 'b * Cmd<Navigable<'c,'d>>) ->
-        update:('c -> 'b -> 'b * Cmd<Navigable<'c,'d>>) ->
-          view:('b -> ('c -> unit) -> Navigation<'e,'d> -> 'f) ->
-            updateState:('b -> NavigationState -> 'b * Cmd<'c>) ->
-              getState:('b -> NavigationState) ->
-                pages:(string * Page<'e,'d>) list ->
-                  Program<'a,'b,Navigable<'c,'d>,'f>
+    val mkProgramWithNavigation :
+      init:(unit -> 'a * 'b list) ->
+        update:('c -> 'a -> 'a * 'b list) ->
+          view:('a -> ('c -> unit) -> 'd option -> 'e) ->
+            mapCommand:('b -> Sub<Message<'c,'f>>) ->
+              pages:(string * Page<'d,'f>) list ->
+                Program<unit,'a,ProgramMsg<'c,'f>,'e>
+        when 'a :> INavigationModel<'a>
+
+    val mkSimpleWithNavigation :
+      init:(unit -> 'a * Cmd<Message<'b,'c>>) ->
+        update:('b -> 'a -> 'a * Cmd<Message<'b,'c>>) ->
+          view:('a -> ('b -> unit) -> 'd option -> 'e) ->
+            pages:(string * Page<'d,'c>) list ->
+              Program<unit,'a,ProgramMsg<'b,'c>,'e>
+        when 'a :> INavigationModel<'a>
   end

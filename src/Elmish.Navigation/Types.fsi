@@ -1,4 +1,5 @@
 namespace Elmish.Navigation
+
   open Elmish
 
   type PageName = | PageName of string
@@ -7,73 +8,66 @@ namespace Elmish.Navigation
     { Name: PageName
       Model: obj }
 
-  type OnNavigationParameters<'Params> =
-    { Source: PageName option
-      Parameters: 'Params option }
-
   type NavigationState =
     { Stack: PageModel list }
 
-  type NavigationMessage<'Params> =
-    | Navigate of string
-    | NavigateParams of string * 'Params option
-    | NavigateBack
-    | NavigateBackParams of 'Params option
-
-  type Message<'Msg, 'Arg> =
-      | Message of 'Msg
-      | Navigation of NavigationMessage<'Arg>
-
-  type Command<'Msg, 'Arg> =
-      | Message of Message<'Msg, 'Arg>
-      | Effect of Message<'Msg, 'Arg>
-
-  type ProgramMsg<'Msg, 'Arg> =
-      | App of Command<'Msg, 'Arg>
-      | Page of Command<'Msg, 'Arg>
-
-  type Navigable<'msg, 'Params> =
-    | AppMsg of 'msg
-    | PageMsg of 'msg
-    | NavigationMsg of NavigationMessage<'Params>
-    with
-      static member
-        Cast : msg:Navigable<'msg, 'Params> -> Navigable<obj, 'Params>
-      static member
-        Upcast<'Msg> : msg:Navigable<obj, 'Params> -> Navigable<'Msg, 'Params>
-
-  type Navigation<'Page,'Params> =
-    { Dispatch: Dispatch<NavigationMessage<'Params>>
-      CurrentPage: 'Page option }
-
-  type Dispatch<'Msg> = 'Msg -> unit
-
-  type Init<'Model, 'Msg, 'Args> = unit -> 'Model * Cmd<Navigable<'Msg, 'Args>>
-
-  type MapCommand<'Msg, 'CmdMsg, 'Args> = 'CmdMsg -> Cmd<Navigable<'Msg, 'Args>>
-
-  type Update<'Model, 'Msg, 'CmdMsg, 'Args> = 'Msg -> 'Model -> 'Model * Cmd<Navigable<'CmdMsg, 'Args>>
-
-  type View<'Model, 'Msg, 'View> = 'Model -> Dispatch<'Msg> -> 'View
-
-  type OnNavigate<'Model, 'Msg, 'Args> =
-    'Model -> OnNavigationParameters<'Args> -> 'Model * Cmd<Navigable<'Msg, 'Args>>
-
-  type MapExternalCmd<'Msg, 'Args> = 'Msg -> Cmd<Navigable<'Msg, 'Args>>
-
-  type Page<'View, 'Args> = {
-    Init : Init<obj, obj, 'Args>
-    Update : Update<obj, obj, obj, 'Args>
-    View : View<obj, obj, 'View>
-    OnNavigate : OnNavigate<obj, obj, 'Args>
-    MapCommand : MapCommand<obj, obj, 'Args> }
-    with
-      static member
-        Create : init:Init<'Model,'Msg, 'Args> * view:View<'Model,'Msg,'View> *
-                 ?update:Update<'Model,'Msg, 'CmdMsg, 'Args> *
-                 ?onNavigate:OnNavigate<'Model,'Msg,'Args> *
-                 ?mapCommand:MapCommand<'Msg, 'CmdMsg, 'Args> ->
-                   Page<'View,'Args>
+  type INavigationModel<'a when 'a :> INavigationModel<'a>> =
+    interface
+      abstract member GetNavigation : unit -> NavigationState
+      abstract member UpdateNavigation : NavigationState -> 'a
     end
 
-  type private Pages<'View, 'Args> = Map<PageName, Page<'View, 'Args>>
+  type NavigationMessage<'args> =
+    | Navigate of string
+    | NavigateParams of string * 'args option
+    | NavigateBack
+    | NavigateBackParams of 'args option
+
+  type Message<'msg,'args> =
+    | Message of 'msg
+    | Navigation of NavigationMessage<'args>
+    with
+      static member Downcast : msg:Message<'a,'b> -> Message<obj,'b>
+      static member Upcast : msg:Message<obj,'args> -> Message<'msg,'args>
+    end
+
+  type ProgramMsg<'msg,'args> =
+    | App of Message<'msg,'args>
+    | Page of Message<'msg,'args>
+
+  type OnNavigationEventArgs<'args> =
+    { Source: PageName option
+      Parameters: 'args option }
+    with
+      member Map : unit -> OnNavigationEventArgs<'a>
+    end
+
+  type Dispatch<'msg> = 'msg -> unit
+
+  type Init<'model,'cmdMsg,'args> = unit -> 'model * Cmd<Message<'cmdMsg,'args>>
+
+  type MapCommand<'msg,'cmdMsg,'args> = 'cmdMsg -> Cmd<Message<'msg,'args>>
+
+  type Update<'model,'msg,'cmdMsg,'args> =
+    'msg -> 'model -> 'model * Cmd<Message<'cmdMsg,'args>>
+
+  type View<'model,'msg,'view> = 'model -> Dispatch<'msg> -> 'view
+
+  type OnNavigate<'model,'msg,'args> =
+    'model -> OnNavigationEventArgs<'args> -> 'model * Cmd<Message<'msg,'args>>
+
+  type Page<'view,'args> =
+    { Init: Init<obj,obj,'args>
+      Update: Update<obj,obj,obj,'args>
+      View: View<obj,obj,'view>
+      OnNavigate: OnNavigate<obj,obj,'args>
+      MapCommand: MapCommand<obj,obj,'args> }
+    with
+      static member
+        Create : init:Init<'model,'cmdMsg,'args> * view:View<'model,'msg,'view> *
+                 ?update:Update<'model,'msg,'cmdMsg,'args> *
+                 ?onNavigate:OnNavigate<'model,'msg,'args> *
+                 ?mapCommand:MapCommand<'msg,'cmdMsg,'args> -> Page<'view,'args>
+    end
+
+  type Pages<'view,'args> = Map<PageName,Page<'view,'args>>

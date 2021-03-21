@@ -47,7 +47,7 @@ type Message<'msg, 'args> =
             match msg with
             | Message msg -> Message (msg :> obj)
             | Navigation msg -> Navigation msg
-        static member Upcast<'msg>(msg: Message<obj, 'args>) =
+        static member Upcast(msg: Message<obj, 'args>) =
             match msg with
             | Message msg -> Message (msg :?> 'msg)
             | Navigation msg -> Navigation msg
@@ -79,7 +79,7 @@ type Dispatch<'msg> = 'msg -> unit
 
 /// <summary>
 /// Represents the method used to initialize a page
-/// <summary>
+/// </summary>
 type Init<'model, 'cmdMsg, 'args> = unit -> 'model * Cmd<Message<'cmdMsg, 'args>>
 
 /// <summary>

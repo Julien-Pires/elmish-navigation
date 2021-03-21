@@ -73,7 +73,7 @@ module Navigation =
                 let template = pages |> Map.find page.Name
                 template.Update (msg :> obj) page.Model
                 ||> fun model cmd -> updateCurrentPage page navigationState model, cmd
-                ||> fun state cmd -> model.UpdateNavigation(state), cmd |> Cmd.map (Message.Upcast<_> >> Page)
+                ||> fun state cmd -> model.UpdateNavigation(state), cmd |> Cmd.map (Message.Upcast >> Page)
             | None -> model, []
         | App (Navigation msg)
         | Page (Navigation msg) ->
@@ -88,7 +88,7 @@ module Navigation =
             Some (page.View model ((fun msg -> msg :?> 'a) >> Message >> Page >> dispatch))
         | None -> None
 
-    let init = { Stack = [] }
+    let empty = { Stack = [] }
 
 [<RequireQualifiedAccess>]
 module Program =
