@@ -3,10 +3,11 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <PackageId>Elmish.Navigation</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.0-beta.build1</Version>
     <Authors>Julien Pires</Authors>
     <Description>
-      This library allow elmish application to make each pages independant and ease model state management.
+      Elmish-navigation allow to simplify the creation and navigation for multi-pages application powered by Elmish. 
+      It makes the management of each page states as much transparent as possible. It allows to focus more on creation and update of new pages instead of how to connect everything.
     </Description>
   </PropertyGroup>
 

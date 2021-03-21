@@ -1,5 +1,7 @@
 # Elmish-Navigation
 
+[![Build status](https://ci.appveyor.com/api/projects/status/h0c83n5niwc8gm35/branch/main?svg=true)](https://ci.appveyor.com/project/Takumii/elmish-navigation/branch/main)
+
 **Elmish-navigation** allow to simplify the creation and navigation for multi-pages application powered by **Elmish**. It makes the management of each page states as much transparent as possible. It allows to focus more on creation and update of new pages instead of how to connect everything.
 
 The library allow to create each page as if it were an independant application. Each pages must provides its own init, update and view.
