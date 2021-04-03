@@ -4,7 +4,6 @@ image: Visual Studio 2019
 
 install:
   - ps: dotnet tool install fake-cli -g
-  - ps: dotnet tool restore
 
 build_script:
   - cmd: dotnet fake build
