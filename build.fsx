@@ -53,13 +53,14 @@ Target.create "Package" (fun _ ->
             | "master" -> options
             | _ -> 
                 let jobNumber = AppVeyor.Environment.BuildNumber
-                { options with VersionSuffix = Some $"alpha{jobNumber}" }) project
+                { options with VersionSuffix = Some $"alpha.{jobNumber}" }) project
     )
 )
 
 Target.create "PublishNuget" (fun _ ->
     let packages = !! "src./**/*.nupkg"
-    packages |> Seq.iter (printfn "%s")
+    packages |> Seq.iter (fun package ->
+        DotNet.nugetPush id package)
 )
 
 // Build order
