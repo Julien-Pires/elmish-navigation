@@ -113,7 +113,7 @@ type Page<'view, 'args> = {
     MapCommand: MapCommand<obj, obj, 'args> }
     with
         /// <summary>
-        /// Allow to create a new page
+        /// Creates a new page
         /// </summary>
         static member Create
             (

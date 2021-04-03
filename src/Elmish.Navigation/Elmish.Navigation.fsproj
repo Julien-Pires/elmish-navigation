@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <PackageId>Elmish.Navigation</PackageId>
-    <Version>1.0.0-beta.build1</Version>
+    <VersionPrefix>1.0.0</VersionPrefix>
     <Authors>Julien Pires</Authors>
     <Description>
       Elmish-navigation allow to simplify the creation and navigation for multi-pages application powered by Elmish. 
