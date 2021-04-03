@@ -6,4 +6,4 @@ install:
   - ps: dotnet tool install fake-cli -g
 
 build_script:
-  - cmd: dotnet fake build
+  - cmd: fake build
