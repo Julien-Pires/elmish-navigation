@@ -67,6 +67,7 @@ Target.create "PublishNuget" (fun _ ->
   ==> "Restore"
   ==> "Build"
   ==> "Package"
+  ==> "PublishNuget"
 
 // start build
-Target.runOrDefault "Package"
+Target.runOrDefault "PublishNuget"
