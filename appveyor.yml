@@ -2,23 +2,5 @@ version: 1.0.{build}
 
 image: Visual Studio 2019
 
-before_build:
-  - dotnet restore src/Elmish.Navigation.sln
-
-after_build:
-  - dotnet pack src/Elmish.Navigation.sln
-
-build:
-  verbosity: minimal
-  publish_nuget: true
-  publish_nuget_symbols: true
-
-artifacts:
-  - path: '**\*.nupkg'
-
-deploy:
-  - provider: NuGet
-    api_key:
-      secure: SjenkSwmLx+6FRHlkZnf4MJDm29vWlEglrlk1OMXlEYujRRVSTlNJfVJ/JGmcx89
-    on:
-      branch: master
+build_script:
+  - cmd: dotnet fake build
