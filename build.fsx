@@ -59,7 +59,7 @@ Target.create "Package" (fun _ ->
 
 Target.create "PublishNuget" (fun _ ->
     let packages = !! "src./**/*.nupkg"
-    printfn "%A" packages
+    packages |> Seq.iter (printfn "%s")
 )
 
 // Build order
