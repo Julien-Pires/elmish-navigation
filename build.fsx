@@ -4,19 +4,22 @@ nuget Fake.IO.FileSystem
 nuget Fake.DotNet.Cli
 nuget Fake.Core.Target
 nuget Fake.Tools.Git
-nuget Fake.DotNet.FSFormatting //"
+nuget Fake.DotNet.FSFormatting
+nuget Fake.BuildServer.AppVeyor //"
 #if !FAKE
 #load ".fake/build.fsx/intellisense.fsx"
 #r "Facades/netstandard"
 #endif
 
+open System.IO
 open Fake
 open Fake.Core
 open Fake.Core.TargetOperators
 open Fake.DotNet
 open Fake.IO
 open Fake.IO.Globbing.Operators
-open System.IO
+
+module AppVeyor = Fake.BuildServer.AppVeyor
 
 // Filesets
 let solution = "src/Elmish.Navigation.sln"
@@ -45,30 +48,19 @@ Target.create "Package" (fun _ ->
     projects
     |> Seq.iter (fun project -> 
         DotNet.pack (fun options ->
-            let branch = Environment.environVar "APPVEYOR_REPO_BRANCH"
+            let branch = AppVeyor.Environment.RepoBranch
             match branch with
             | "master" -> options
             | _ -> 
-                let jobNumber = Environment.environVar "APPVEYOR_JOB_NUMBER"
-                { options with VersionSuffix = Some $"beta{jobNumber}" }) project
+                let jobNumber = AppVeyor.Environment.BuildNumber
+                { options with VersionSuffix = Some $"alpha{jobNumber}" }) project
     )
 )
 
-// Target.create "PublishNuget" (fun _ ->
-//     let exec dir =
-//         DotNet.exec (fun a ->
-//             a.WithCommon (withWorkDir dir)
-//         )
-
-//     let args = sprintf "push Fable.Elmish.%s.nupkg -s nuget.org -k %s" (string release.SemVer) (Environment.environVar "nugetkey")
-//     let result = exec "src/bin/Release" "nuget" args
-//     if (not result.OK) then failwithf "%A" result.Errors
-
-//     let args = sprintf "push Elmish.%s.nupkg -s nuget.org -k %s" (string release.SemVer) (Environment.environVar "nugetkey")
-//     let result = exec "netstandard/bin/Release" "nuget" args
-//     if (not result.OK) then
-//         failwithf "%A" result.Errors
-// )
+Target.create "PublishNuget" (fun _ ->
+    let packages = !! "src./**/*.nupkg"
+    printfn "%A" packages
+)
 
 // Build order
 "Clean"
