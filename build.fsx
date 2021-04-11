@@ -61,12 +61,10 @@ Target.create "Package" (fun _ ->
 
 Target.create "PublishNuget" (fun _ ->
     let packages = !! "src/**/*.nupkg"
-    packages |> Seq.iter (fun package ->
-        printfn "AAAA => %s" (Path.GetDirectoryName package)
+    projects |> Seq.iter (fun project ->
+        printfn "AAAA => %s" project
         NuGet.NuGetPublish (fun options -> { options with 
-            AccessKey = Environment.environVar "NUGET_API_KEY"
-            OutputPath = Path.GetDirectoryName package
-            WorkingDir = Path.GetDirectoryName package }) )
+            AccessKey = Environment.environVar "NUGET_API_KEY" }) )
 )
 
 // Build order
