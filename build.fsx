@@ -66,9 +66,7 @@ Target.create "PublishNuget" (fun _ ->
         NuGet.NuGetPublish (fun options -> { options with 
             AccessKey = Environment.environVar "NUGET_API_KEY"
             Project = Path.GetFileNameWithoutExtension package
-            Version = ""
-            OutputPath = Path.GetDirectoryName package
-            WorkingDir = Path.GetDirectoryName package }) )
+            OutputPath = Path.GetDirectoryName package }) )
 )
 
 // Build order
