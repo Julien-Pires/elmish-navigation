@@ -58,7 +58,7 @@ Target.create "Package" (fun _ ->
 )
 
 Target.create "PublishNuget" (fun _ ->
-    let packages = !! "src./**/*.nupkg"
+    let packages = !! "src/**/*.nupkg"
     packages |> Seq.iter (fun package ->
         printfn "AAAA => %s" package
         DotNet.nugetPush (fun options -> 
