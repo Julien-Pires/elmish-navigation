@@ -5,7 +5,7 @@ nuget Fake.DotNet.Cli
 nuget Fake.Core.Target
 nuget Fake.Tools.Git
 nuget Fake.DotNet.FSFormatting
-nuget Fake.BuildServer.AppVeyor //"
+nuget Fake.BuildServer.AppVeyor"
 #if !FAKE
 #load ".fake/build.fsx/intellisense.fsx"
 #r "Facades/netstandard"
@@ -60,7 +60,9 @@ Target.create "Package" (fun _ ->
 Target.create "PublishNuget" (fun _ ->
     let packages = !! "src./**/*.nupkg"
     packages |> Seq.iter (fun package ->
-        DotNet.nugetPush id package)
+        DotNet.nugetPush (fun options -> 
+            let pushParams = options.PushParams
+            { options with PushParams = { pushParams with ApiKey = Some (Environment.environVar "NUGET_API_KEY") }}) package)
 )
 
 // Build order
