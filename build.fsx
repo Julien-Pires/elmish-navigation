@@ -53,7 +53,7 @@ Target.create "Package" (fun _ ->
             | "master" -> options
             | _ -> 
                 let jobNumber = AppVeyor.Environment.BuildNumber
-                { options with VersionSuffix = Some $"alpha.{jobNumber}" }) project
+                { options with VersionSuffix = Some $"-alpha.{jobNumber}" }) project
     )
 )
 
