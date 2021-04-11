@@ -1,7 +1,9 @@
 #r "paket:
 storage: packages
+nuget FSharp.Data
 nuget Fake.IO.FileSystem
 nuget Fake.DotNet.Cli
+nuget Fake.DotNet.NuGet
 nuget Fake.Core.Target
 nuget Fake.Tools.Git
 nuget Fake.DotNet.FSFormatting
@@ -12,14 +14,18 @@ nuget Fake.BuildServer.AppVeyor"
 #endif
 
 open System.IO
+open FSharp.Data
 open Fake
 open Fake.Core
 open Fake.Core.TargetOperators
 open Fake.DotNet
+open Fake.DotNet.NuGet
 open Fake.IO
 open Fake.IO.Globbing.Operators
 
 module AppVeyor = Fake.BuildServer.AppVeyor
+
+type fsProj = XmlProvider<"<Project><PropertyGroup><VersionPrefix>1.0.0</VersionPrefix></PropertyGroup></Project>">
 
 // Filesets
 let solution = "src/Elmish.Navigation.sln"
@@ -46,7 +52,9 @@ Target.create "Build" (fun _ ->
 // Build a NuGet package
 Target.create "Package" (fun _ ->
     projects
-    |> Seq.iter (fun project -> 
+    |> Seq.iter (fun project ->
+        let version = fsProj.Parse(File.ReadAllText(project))
+        printfn "AAAAA ===> %s" <| version.PropertyGroup.VersionPrefix
         DotNet.pack (fun options ->
             let branch = AppVeyor.Environment.RepoBranch
             match branch with
@@ -65,7 +73,7 @@ Target.create "PublishNuget" (fun _ ->
             { options with 
                 PushParams = { pushParams with 
                     ApiKey = Some (Environment.environVar "NUGET_API_KEY")
-                    Source = Some "https://www.nuget.org/api/v2/package" }}) package)
+                    Source = Some"https://www.nuget.org/api/v2/package" }}) package)
 )
 
 // Build order
