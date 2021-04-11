@@ -2,7 +2,6 @@
 storage: packages
 nuget Fake.IO.FileSystem
 nuget Fake.DotNet.Cli
-nuget Fake.DotNet.Nuget
 nuget Fake.Core.Target
 nuget Fake.Tools.Git
 nuget Fake.DotNet.FSFormatting
@@ -17,7 +16,6 @@ open Fake
 open Fake.Core
 open Fake.Core.TargetOperators
 open Fake.DotNet
-open Fake.DotNet.NuGet
 open Fake.IO
 open Fake.IO.Globbing.Operators
 
@@ -62,11 +60,12 @@ Target.create "Package" (fun _ ->
 Target.create "PublishNuget" (fun _ ->
     let packages = !! "src/**/*.nupkg"
     packages |> Seq.iter (fun package ->
-        printfn "AAAA => %s" (NuGet.GetPackageVersion (Path.getDirectory package) package)
-        NuGet.NuGetPublish (fun options -> { options with 
-            AccessKey = Environment.environVar "NUGET_API_KEY"
-            Project = Path.GetFileNameWithoutExtension package
-            OutputPath = Path.GetDirectoryName package }) )
+        DotNet.nugetPush (fun options -> 
+            let pushParams = options.PushParams
+            { options with 
+                PushParams = { pushParams with 
+                    ApiKey = Some (Environment.environVar "NUGET_API_KEY")
+                    Source = Some "https://www.nuget.org/api/v2/package" }}) package)
 )
 
 // Build order
