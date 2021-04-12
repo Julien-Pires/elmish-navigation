@@ -52,7 +52,7 @@ let projects =
             | _ ->
                 let jobNumber = AppVeyor.Environment.BuildNumber
                 let nextSemVer = Version.IncPatch semVer
-                $"{nextSemVer.ToString()}.alpha-{jobNumber}"
+                $"{nextSemVer.ToString()}.alpha{jobNumber}"
         { Name = projectName
           Directory = projectDir
           Package = { Version = version }})
