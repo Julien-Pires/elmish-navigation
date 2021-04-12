@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Project</id>
+    <version>1.0.0</version>
+    <authors>Foo Bar</authors>
+    <description>Package description</description>
+  </metadata>
+</package>

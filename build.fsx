@@ -23,21 +23,45 @@ open Fake.DotNet.NuGet
 open Fake.IO
 open Fake.IO.Globbing.Operators
 
-module AppVeyor = Fake.BuildServer.AppVeyor
+module AppVeyor = BuildServer.AppVeyor
 
-type fsProj = XmlProvider<"<Project><PropertyGroup><VersionPrefix>1.0.0</VersionPrefix></PropertyGroup></Project>">
+type nuspec = XmlProvider<"sample.nuspec">
+
+type Package = {
+    Version: string }
+
+type Project = {
+    Name: string
+    Directory: string
+    Package: Package }
 
 // Filesets
 let solution = "src/Elmish.Navigation.sln"
-let projects = !! "src/**/*.fsproj"
+let projects = 
+    !! "src/**/*.fsproj"
+    |> Seq.map (fun project ->
+        let projectName = Path.GetFileNameWithoutExtension project
+        let projectDir = Path.getDirectory project
+        let nuspecContent = File.ReadAllText (Path.Combine [| projectDir; $"{projectName}.nuspec" |])
+        let nuspecPackage = nuspec.Parse nuspecContent
+        let version =
+            let branch = AppVeyor.Environment.RepoBranch
+            let semVer = SemVer.parse nuspecPackage.Metadata.Version
+            match branch with
+            | "master" -> semVer.ToString()
+            | _ ->
+                let jobNumber = AppVeyor.Environment.BuildNumber
+                let nextSemVer = Version.IncPatch semVer
+                $"{nextSemVer.ToString()}.alpha-{jobNumber}"
+        { Name = projectName
+          Directory = projectDir
+          Package = { Version = version }})
 
 Target.create "Clean" (fun _ ->
     projects
     |> Seq.iter (fun project ->
-        let dir = Path.GetDirectoryName project 
-        Shell.cleanDir $"{dir}/obj"
-        Shell.cleanDir $"{dir}/bin"
-    )
+        Shell.cleanDir $"{project.Directory}/obj"
+        Shell.cleanDir $"{project.Directory}/bin")
 )
 
 Target.create "Restore" (fun _ ->
@@ -50,38 +74,27 @@ Target.create "Build" (fun _ ->
 
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
-Target.create "Package" (fun _ ->
+Target.create "Packages" (fun _ ->
     projects
     |> Seq.iter (fun project ->
-        let version = fsProj.Parse(File.ReadAllText(project))
-        printfn "AAAAA ===> %s" <| version.PropertyGroup.VersionPrefix
-        DotNet.pack (fun options ->
-            let branch = AppVeyor.Environment.RepoBranch
-            match branch with
-            | "master" -> options
-            | _ -> 
-                let jobNumber = AppVeyor.Environment.BuildNumber
-                { options with VersionSuffix = Some $"alpha.{jobNumber}" }) project
-    )
-)
-
-Target.create "PublishNuget" (fun _ ->
-    let packages = !! "src/**/*.nupkg"
-    packages |> Seq.iter (fun package ->
-        DotNet.nugetPush (fun options -> 
-            let pushParams = options.PushParams
-            { options with 
-                PushParams = { pushParams with 
-                    ApiKey = Some (Environment.environVar "NUGET_API_KEY")
-                    Source = Some"https://www.nuget.org/api/v2/package" }}) package)
+        let nuspecFile = Path.Combine [| project.Directory; $"{project.Name}.nuspec" |]
+        let nugetFolder = Path.Combine [| project.Directory; "bin/release" |]
+        NuGet.NuGet (fun p ->
+            { p with
+                Version = project.Package.Version
+                Project = project.Name
+                WorkingDir = project.Directory
+                OutputPath = nugetFolder
+                AccessKey = Environment.environVar "NUGET_API_KEY"
+                Publish = false })
+            nuspecFile)
 )
 
 // Build order
 "Clean"
   ==> "Restore"
   ==> "Build"
-  ==> "Package"
-  ==> "PublishNuget"
+  ==> "Packages"
 
 // start build
-Target.runOrDefault "PublishNuget"
+Target.runOrDefault "Packages"

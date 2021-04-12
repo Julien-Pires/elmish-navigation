@@ -7,3 +7,6 @@ install:
 
 build_script:
   - cmd: fake build
+
+artifacts:
+  - path: '**\*.nupkg'
