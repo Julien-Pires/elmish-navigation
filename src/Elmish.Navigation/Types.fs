@@ -37,27 +37,23 @@ type NavigationMessage<'args> =
     | NavigateBackParams of 'args option
 
 /// <summary>
-/// Represents a wrapper around an application message or a navigation message
+/// Represents a wrapper for an application message or a page message
 /// </summary>
-type Message<'msg, 'args> =
-    | Message of 'msg
+type ProgramMsg<'msg, 'args> =
+    | App of 'msg
+    | Page of 'msg
     | Navigation of NavigationMessage<'args>
     with
         static member Downcast(msg) =
             match msg with
-            | Message msg -> Message (msg :> obj)
-            | Navigation msg -> Navigation msg
-        static member Upcast(msg: Message<obj, 'args>) =
+            | App msg  -> App (msg :> obj)
+            | Page msg -> Page (msg :> obj)
+            | Navigation args -> Navigation args
+        static member Upcast(msg: ProgramMsg<obj, 'args>) =
             match msg with
-            | Message msg -> Message (msg :?> 'msg)
-            | Navigation msg -> Navigation msg
-
-/// <summary>
-/// Represents a wrapper for an application message or a page message
-/// </summary>
-type ProgramMsg<'msg, 'args> =
-    | App of Message<'msg, 'args>
-    | Page of Message<'msg, 'args>
+            | App msg -> App (msg :?> 'msg)
+            | Page msg -> Page (msg :?> 'msg)
+            | Navigation args -> Navigation args
 
 /// <summary>
 /// Provides information when a page navigation occurred
@@ -80,17 +76,17 @@ type Dispatch<'msg> = 'msg -> unit
 /// <summary>
 /// Represents the method used to initialize a page
 /// </summary>
-type Init<'model, 'cmdMsg, 'args> = unit -> 'model * Cmd<Message<'cmdMsg, 'args>>
+type Init<'model, 'cmdMsg> = unit -> 'model * Cmd<'cmdMsg>
 
 /// <summary>
 /// Represents the method used to map a command message to a message
 /// </summary>
-type MapCommand<'msg, 'cmdMsg, 'args> = 'cmdMsg -> Cmd<Message<'msg, 'args>>
+type MapCommand<'msg, 'cmdMsg> = 'cmdMsg -> Cmd<'msg>
 
 /// <summary>
 /// Represents the method used to update the page state
 /// </summary>
-type Update<'model, 'msg, 'cmdMsg, 'args> = 'msg -> 'model -> 'model * Cmd<Message<'cmdMsg, 'args>>
+type Update<'model, 'msg, 'cmdMsg> = 'msg -> 'model -> 'model * Cmd<'cmdMsg>
 
 /// <summary>
 /// Represents the method use to render the page
@@ -100,53 +96,53 @@ type View<'model, 'msg, 'view> = 'model -> Dispatch<'msg> -> 'view
 /// <summary>
 /// Represents the method that is triggred when a page navigation occurred to the page
 /// </summary>
-type OnNavigate<'model, 'msg, 'args> = 'model -> OnNavigationEventArgs<'args> -> 'model * Cmd<Message<'msg, 'args>>
+type OnNavigate<'model, 'msg, 'args> = 'model -> OnNavigationEventArgs<'args> -> 'model * Cmd<'msg>
 
 /// <summary>
 /// Represents an application page
 /// </summary>
 type Page<'view, 'args> = {
-    Init : Init<obj, obj, 'args>
-    Update : Update<obj, obj, obj, 'args>
+    Init : Init<obj, obj>
+    Update : Update<obj, obj, obj>
     View : View<obj, obj, 'view>
     OnNavigate : OnNavigate<obj, obj, 'args>
-    MapCommand: MapCommand<obj, obj, 'args> }
+    MapCommand: MapCommand<obj, obj> }
     with
         /// <summary>
         /// Creates a new page
         /// </summary>
         static member Create
             (
-                init: Init<'model, 'cmdMsg, 'args>,
+                init: Init<'model, 'cmdMsg>,
                 view: View<'model, 'msg, 'view>, 
-                ?update: Update<'model, 'msg, 'cmdMsg, 'args>, 
+                ?update: Update<'model, 'msg, 'cmdMsg>, 
                 ?onNavigate: OnNavigate<'model, 'msg, 'args>,
-                ?mapCommand: MapCommand<'msg, 'cmdMsg, 'args>
+                ?mapCommand: MapCommand<'msg, 'cmdMsg>
             ) =
-            let init = fun () -> 
+            let init = fun () ->
                 init() 
-                ||> fun model cmd -> model :> obj, (cmd |> Cmd.map Message.Downcast<'cmdMsg, 'args>)
+                ||> fun model cmd -> model :> obj, (cmd |> Cmd.map (fun cmd -> cmd :> obj))
             let view = fun (model: obj) (dispatch: Dispatch<obj>) -> view (model :?> 'model) dispatch
             let update =
                 match update with
                 | Some update ->
                     fun (msg: obj) (model: obj) -> 
                         update (msg :?> 'msg) (model :?> 'model) 
-                        ||> fun model cmd -> model :> obj, (cmd |> Cmd.map Message.Downcast<'cmdMsg, 'args>)
+                        ||> fun model cmd -> model :> obj, (cmd |> Cmd.map (fun cmd -> cmd :> obj))
                 | None -> fun _ (model: obj) -> model, []
             let onNavigate =
                 match onNavigate with
                 | Some onNavigate ->
                     fun (model: obj) navigationParams -> 
                         onNavigate (model :?> 'model) navigationParams
-                        ||> fun model cmd -> model :> obj, (cmd |> Cmd.map Message.Downcast<'msg, 'args>)
+                        ||> fun model cmd -> model :> obj, (cmd |> Cmd.map (fun cmd -> cmd :> obj))
                 | None -> fun (model: obj) _ -> model, []
             let mapCommand =
                 match mapCommand with
                 | Some mapCommand ->
                     fun (msg: obj) -> 
                         mapCommand (msg :?> 'cmdMsg) 
-                        |> Cmd.map Message.Downcast<'msg, 'args>
+                        |> Cmd.map (fun cmd -> cmd :> obj)
                 | None -> fun _ -> []
             { Init = init
               Update = update

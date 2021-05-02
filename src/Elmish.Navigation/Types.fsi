@@ -23,17 +23,14 @@ namespace Elmish.Navigation
     | NavigateBack
     | NavigateBackParams of 'args option
 
-  type Message<'msg,'args> =
-    | Message of 'msg
+  type ProgramMsg<'msg,'args> =
+    | App of 'msg
+    | Page of 'msg
     | Navigation of NavigationMessage<'args>
     with
-      static member Downcast : msg:Message<'a,'b> -> Message<obj,'b>
-      static member Upcast : msg:Message<obj,'args> -> Message<'msg,'args>
+      static member Downcast : msg:ProgramMsg<'a,'b> -> ProgramMsg<obj,'b>
+      static member Upcast : msg:ProgramMsg<obj,'args> -> ProgramMsg<'msg,'args>
     end
-
-  type ProgramMsg<'msg,'args> =
-    | App of Message<'msg,'args>
-    | Page of Message<'msg,'args>
 
   type OnNavigationEventArgs<'args> =
     { Source: PageName option
