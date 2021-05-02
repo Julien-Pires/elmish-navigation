@@ -86,7 +86,7 @@ Target.create "Packages" (fun _ ->
                 WorkingDir = project.Directory
                 OutputPath = nugetFolder
                 AccessKey = Environment.environVar "NUGET_API_KEY"
-                Publish = false })
+                Publish = true })
             nuspecFile)
 )
 
