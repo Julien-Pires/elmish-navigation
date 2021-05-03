@@ -1,6 +1,9 @@
 namespace Elmish.Navigation
 
+open System
 open Elmish
+
+type PageId = PageId of Guid
 
 /// <summary>
 /// Represents the name of a page
@@ -11,6 +14,7 @@ type PageName = PageName of string
 /// Represents information about an opened page
 /// </summary>
 type PageModel = {
+    Id: PageId
     Name: PageName
     Model: obj }
 
@@ -18,14 +22,15 @@ type PageModel = {
 /// Represents the current state for the navigation
 /// </summary>
 type NavigationState = {
-    Stack: PageModel list }
+    Pages: Map<PageId, PageModel>
+    Stack: PageId list }
 
 /// <summary>
 /// Represents a model that contains a navigation state
 /// </summary>
-type INavigationModel<'a when 'a :> INavigationModel<'a>> =
-    abstract member UpdateNavigation: NavigationState -> 'a
-    abstract member GetNavigation: unit -> NavigationState
+type NavigationModel<'a> = {
+    Navigation: NavigationState 
+    Model: 'a }
 
 /// <summary>
 /// Represents a message used to navigate
@@ -35,25 +40,6 @@ type NavigationMessage<'args> =
     | NavigateParams of string * 'args option
     | NavigateBack
     | NavigateBackParams of 'args option
-
-/// <summary>
-/// Represents a wrapper for an application message or a page message
-/// </summary>
-type ProgramMsg<'msg, 'args> =
-    | App of 'msg
-    | Page of 'msg
-    | Navigation of NavigationMessage<'args>
-    with
-        static member Downcast(msg) =
-            match msg with
-            | App msg  -> App (msg :> obj)
-            | Page msg -> Page (msg :> obj)
-            | Navigation args -> Navigation args
-        static member Upcast(msg: ProgramMsg<obj, 'args>) =
-            match msg with
-            | App msg -> App (msg :?> 'msg)
-            | Page msg -> Page (msg :?> 'msg)
-            | Navigation args -> Navigation args
 
 /// <summary>
 /// Provides information when a page navigation occurred
