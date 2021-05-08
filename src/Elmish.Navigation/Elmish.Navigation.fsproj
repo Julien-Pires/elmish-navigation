@@ -16,8 +16,6 @@
     <Compile Include="Types.fs" />
     <!-- <Compile Include="Navigation.fsi" /> -->
     <Compile Include="Navigation.fs" />
-    <!-- <Compile Include="Cmd.fsi" /> -->
-    <Compile Include="Cmd.fs" />
   </ItemGroup>
 
   <ItemGroup>

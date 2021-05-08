@@ -21,6 +21,13 @@ type ProgramMsg<'msg, 'args> =
 
 [<RequireQualifiedAccess>]
 module Navigation =
+    let navigationStream = new Event<NavigationMessage<_>>()
+
+    let sendNavigationMsg msg =
+        msg
+        |> NavigationMessage.Downcast<_>
+        |> navigationStream.Trigger
+
     let (|Navigate|NavigateBack|) = function
         | Navigate page -> Navigate (PageName page, None)
         | NavigateParams (page, parameters) -> Navigate (PageName page, parameters)
@@ -61,7 +68,7 @@ module Navigation =
         Source = source
         Parameters = parameters }
 
-    let navigate state pages name parameters =
+    let applyNavigate state pages name parameters =
         getTemplate pages name
         |> Option.bind (fun template ->
             let navigationParameters = createNavigationParams (Some name) parameters
@@ -80,7 +87,7 @@ module Navigation =
             Some(state, cmds))
         |> Option.defaultValue (state, [])
 
-    let navigateBack state pages parameters =
+    let applyNavigateBack state pages parameters =
         getCurrentPage state
         |> Option.bind (fun previousPage -> 
             popPage state
@@ -96,8 +103,8 @@ module Navigation =
     let applyNavigation pages msg model =
         let state = model.Navigation
         match msg with
-        | Navigate (page, parameters) -> navigate state pages page parameters
-        | NavigateBack parameters -> navigateBack state pages parameters
+        | Navigate (page, parameters) -> applyNavigate state pages page parameters
+        | NavigateBack parameters -> applyNavigateBack state pages parameters
         ||> fun state cmd ->
                 { model with Navigation = state }, cmd |> Cmd.map MessageSource.Upcast<_>
 
@@ -132,23 +139,56 @@ module Navigation =
         Model = model
         Navigation = empty }
 
+    let navigateWith page args =
+        NavigateParams (page, Some args) |> sendNavigationMsg
+
+    let navigate page =
+        Navigate page |> sendNavigationMsg
+
+    let navigateBackWith args =
+        NavigateBackParams (Some args) |> sendNavigationMsg
+
+    let navigateBack =
+        NavigateBack |> sendNavigationMsg
+
+    module ProgramInternal =
+        let wrapInit userInit args = 
+            userInit args 
+            ||> fun model cmd -> 
+                init model, cmd |> Cmd.map (App >> Message)
+
+        let wrapUpdate pages userUpdate msg model =
+            update userUpdate pages msg model
+
+        let wrapView userView model dispatch =
+            userView (model.Model) (App >> Message >> dispatch)
+
+        let wrapSetState userSetState model dispatch =
+            userSetState (model.Model) (App >> Message >> dispatch)
+
+        let wrapSubscribe userSubscribe model =
+            let stream dispatch =
+                navigationStream.Publish
+                |> Observable.subscribe (fun msg ->
+                    msg
+                    |> NavigationMessage.Upcast<_>
+                    |> Navigation 
+                    |> dispatch)
+                |> ignore
+            let userCmds = userSubscribe (model.Model)
+            Cmd.batch[ Cmd.ofSub stream; 
+                       Cmd.map (App >> Message) userCmds ]
+
+        let map pages program =
+            program |>
+            Program.map 
+                wrapInit 
+                (wrapUpdate pages) 
+                wrapView 
+                wrapSetState
+                wrapSubscribe
+
 [<RequireQualifiedAccess>]
 module Program =
-    let map = App
-
-    let wrapInit userInit = 
-        userInit() 
-        ||> fun model cmd -> 
-            Navigation.init model, cmd |> Cmd.map (App >> Message)
-
-    let wrapUpdate userUpdate pages msg model =
-        Navigation.update userUpdate pages msg model
-
-    let withNavigation pages program =
-        program |>
-        Program.map
-            (fun init _ -> wrapInit init)
-            (fun update msg model -> wrapUpdate update pages msg model)
-            (fun view model dispatch -> view (model.Model) (App >> Message >> dispatch)) 
-            (fun setState model dispatch -> setState (model.Model) (App >> Message >> dispatch))
-            (fun subscribe model -> subscribe (model.Model) |> Cmd.map (App >> Message))
+    let withNavigation = 
+        Navigation.ProgramInternal.map

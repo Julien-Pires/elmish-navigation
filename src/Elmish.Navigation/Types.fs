@@ -40,6 +40,19 @@ type NavigationMessage<'args> =
     | NavigateParams of string * 'args option
     | NavigateBack
     | NavigateBackParams of 'args option
+    with
+        static member Downcast msg =
+            match msg with
+            | Navigate page -> Navigate page
+            | NavigateParams (page, args) -> NavigateParams (page, Option.map (fun args -> args :> obj) args)
+            | NavigateBack -> NavigateBack
+            | NavigateBackParams args -> NavigateBackParams (Option.map (fun args -> args :> obj) args)
+        static member Upcast (msg: NavigationMessage<obj>) =
+            match msg with
+            | Navigate page -> Navigate page
+            | NavigateParams (page, args) -> NavigateParams (page, Option.map (fun (args: obj) -> args :?> 'a) args)
+            | NavigateBack -> NavigateBack
+            | NavigateBackParams args -> NavigateBackParams (Option.map (fun (args: obj) -> args :?> 'a) args)
 
 /// <summary>
 /// Provides information when a page navigation occurred
