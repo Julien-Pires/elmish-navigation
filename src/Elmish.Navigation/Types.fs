@@ -8,36 +8,45 @@ type PageId = PageId of Guid
 /// <summary>
 /// Represents the name of a page
 /// </summary>
-type PageName = PageName of string
+type PageName<'a> = PageName of 'a
 
 /// <summary>
 /// Represents information about an opened page
 /// </summary>
-type PageModel = {
+type PageModel<'a> = {
     Id: PageId
-    Name: PageName
+    Name: PageName<'a>
     Model: obj }
 
 /// <summary>
 /// Represents the current state for the navigation
 /// </summary>
-type NavigationState = {
-    Pages: Map<PageId, PageModel>
+type NavigationState<'a> = {
+    Pages: Map<PageId, PageModel<'a>>
     Stack: PageId list }
 
 /// <summary>
 /// Represents a model that contains a navigation state
 /// </summary>
-type NavigationModel<'a> = {
-    Navigation: NavigationState 
-    Model: 'a }
+type NavigationModel<'model, 'pageName> = {
+    Navigation: NavigationState<'pageName>
+    Model: 'model }
+
+type MessageSource<'msg> =
+    | App of 'msg
+    | Page of 'msg * PageId
+    with
+        static member Upcast(msg: MessageSource<obj>) =
+            match msg with
+            | App msg -> App (msg :?> 'b)
+            | Page (msg, pageId) -> Page ((msg :?> 'b), pageId)
 
 /// <summary>
 /// Represents a message used to navigate
 /// </summary>
-type NavigationMessage<'args> =
-    | Navigate of string
-    | NavigateParams of string * 'args option
+type NavigationMessage<'pageName, 'args> =
+    | Navigate of 'pageName
+    | NavigateParams of 'pageName * 'args option
     | NavigateBack
     | NavigateBackParams of 'args option
     with
@@ -47,7 +56,7 @@ type NavigationMessage<'args> =
             | NavigateParams (page, args) -> NavigateParams (page, Option.map (fun args -> args :> obj) args)
             | NavigateBack -> NavigateBack
             | NavigateBackParams args -> NavigateBackParams (Option.map (fun args -> args :> obj) args)
-        static member Upcast (msg: NavigationMessage<obj>) =
+        static member Upcast (msg: NavigationMessage<'pageName, obj>) =
             match msg with
             | Navigate page -> Navigate page
             | NavigateParams (page, args) -> NavigateParams (page, Option.map (fun (args: obj) -> args :?> 'a) args)
@@ -55,10 +64,46 @@ type NavigationMessage<'args> =
             | NavigateBackParams args -> NavigateBackParams (Option.map (fun (args: obj) -> args :?> 'a) args)
 
 /// <summary>
+/// Represents a wrapper for an application message or a page message
+/// </summary>
+type ProgramMsg<'msg, 'pageName, 'args> =
+    | Message of MessageSource<'msg>
+    | Navigation of NavigationMessage<'pageName, 'args>
+
+type Navigator<'pageName, 'args>() =
+    let navigationStream = new Event<NavigationMessage<'pageName,'args>>()
+
+    let sendNavigationMsg msg =
+        msg |> navigationStream.Trigger
+
+    member _.Received = navigationStream.Publish
+
+    member _.Navigate page =
+        Navigate page |> sendNavigationMsg
+
+    member _.NavigateWith page args =
+        NavigateParams (page, Some args) |> sendNavigationMsg
+
+    member _.NavigateBackWith args =
+        NavigateBackParams (Some args) |> sendNavigationMsg
+
+    member _.NavigateBack =
+        NavigateBack |> sendNavigationMsg
+
+type CurrentPage<'pageName, 'view> = {
+    Id: PageId
+    Name: PageName<'pageName>
+    Render: unit -> 'view }
+
+type Navigation<'pageName, 'view, 'args> = {
+    CurrentPage: CurrentPage<'pageName, 'view> option
+    Navigator: Navigator<'pageName,'args> }
+
+/// <summary>
 /// Provides information when a page navigation occurred
 /// </summary>
-type OnNavigationEventArgs<'args> = {
-    Source: PageName option
+type OnNavigationEventArgs<'pageName, 'args> = {
+    Source: 'pageName option
     Parameters: 'args option }
     with
         member this.Map<'a>() = 
@@ -95,16 +140,16 @@ type View<'model, 'msg, 'view> = 'model -> Dispatch<'msg> -> 'view
 /// <summary>
 /// Represents the method that is triggred when a page navigation occurred to the page
 /// </summary>
-type OnNavigate<'model, 'msg, 'args> = 'model -> OnNavigationEventArgs<'args> -> 'model * Cmd<'msg>
+type OnNavigate<'model, 'msg, 'pageName, 'args> = 'model -> OnNavigationEventArgs<'pageName, 'args> -> 'model * Cmd<'msg>
 
 /// <summary>
 /// Represents an application page
 /// </summary>
-type Page<'view, 'args> = {
+type Page<'view, 'pageName, 'args> = {
     Init : Init<obj, obj>
     Update : Update<obj, obj, obj>
     View : View<obj, obj, 'view>
-    OnNavigate : OnNavigate<obj, obj, 'args>
+    OnNavigate : OnNavigate<obj, obj, 'pageName, 'args>
     MapCommand: MapCommand<obj, obj> }
     with
         /// <summary>
@@ -115,7 +160,7 @@ type Page<'view, 'args> = {
                 init: Init<'model, 'cmdMsg>,
                 view: View<'model, 'msg, 'view>, 
                 ?update: Update<'model, 'msg, 'cmdMsg>, 
-                ?onNavigate: OnNavigate<'model, 'msg, 'args>,
+                ?onNavigate: OnNavigate<'model, 'msg, 'pageName, 'args>,
                 ?mapCommand: MapCommand<'msg, 'cmdMsg>
             ) =
             let init = fun () ->
@@ -148,8 +193,3 @@ type Page<'view, 'args> = {
               View = view
               OnNavigate = onNavigate
               MapCommand = mapCommand }
-
-/// <summary>
-/// Represents a mapping of page and page name
-/// </summary>
-type Pages<'view, 'args> = Map<PageName, Page<'view, 'args>>
