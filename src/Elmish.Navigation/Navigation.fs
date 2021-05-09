@@ -41,7 +41,7 @@ module Navigation =
             { state with Pages = pagesMap }
         | None -> state
 
-    let createNavigationParams source parameters = { 
+    let createNavigationEventArgs source parameters = { 
         Source = source
         Parameters = parameters }
 
@@ -49,18 +49,17 @@ module Navigation =
         getTemplate pages name
         |> Option.map (fun template ->
             let (PageName name) = name
-            let navigationParameters = createNavigationParams (Some name) parameters
+            let navigationEventArgs = createNavigationEventArgs (Some name) parameters
             let (model, initCmd) = template.Init()
-            let (model, navigateCmd) = template.OnNavigate model navigationParameters
-            let pageId = PageId(Guid.NewGuid())
+            let (model, navigateCmd) = template.OnNavigate model navigationEventArgs
             let pageModel = {
-                Id = pageId
+                Id = PageId (Guid.NewGuid())
                 Name = PageName name
                 Model = model }
             let state = pushPage state pageModel
             let cmds =
-                Cmd.batch [initCmd; navigateCmd] 
-                |> Cmd.map (fun cmd -> Page(cmd, pageId))
+                Cmd.batch [ initCmd; navigateCmd ] 
+                |> Cmd.map (fun cmd -> Page(cmd, pageModel.Id))
                 |> Cmd.map MessageSource.Upcast<_>
             state, cmds)
         |> Option.defaultValue (state, [])
@@ -70,13 +69,14 @@ module Navigation =
         |> Option.bind (fun previousPage -> 
             popPage state
             |> getCurrentPage
-            |> Option.bind (fun page ->
-                let template = pages |> Map.find page.Name
-                let (PageName name) = previousPage.Name
-                let navigationParameters = createNavigationParams (Some name) parameters
-                let (model, cmd) = template.OnNavigate page.Model navigationParameters
-                let state = updatePage state page.Id model
-                Some(state, cmd |> Cmd.map ((fun cmd -> Page(cmd, page.Id)) >> MessageSource.Upcast<_>))))
+            |> Option.map (fun page -> previousPage, page))
+        |> Option.map (fun (previousPage, currentPage) ->
+            let template = pages |> Map.find currentPage.Name
+            let (PageName name) = previousPage.Name
+            let navigationEventArgs = createNavigationEventArgs (Some name) parameters
+            let (model, cmd) = template.OnNavigate currentPage.Model navigationEventArgs
+            let state = updatePage state currentPage.Id model
+            state, cmd |> Cmd.map ((fun cmd -> Page(cmd, currentPage.Id)) >> MessageSource.Upcast<_>))
         |> Option.defaultValue (state, [])
 
     let applyNavigation pages msg model =

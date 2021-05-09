@@ -3,6 +3,9 @@ namespace Elmish.Navigation
 open System
 open Elmish
 
+/// <summary>
+/// Represents the unique ID of a page
+/// </summary>
 type PageId = PageId of Guid
 
 /// <summary>
@@ -13,16 +16,16 @@ type PageName<'a> = PageName of 'a
 /// <summary>
 /// Represents information about an opened page
 /// </summary>
-type PageModel<'a> = {
+type PageModel<'pageName> = {
     Id: PageId
-    Name: PageName<'a>
+    Name: PageName<'pageName>
     Model: obj }
 
 /// <summary>
 /// Represents the current state for the navigation
 /// </summary>
-type NavigationState<'a> = {
-    Pages: Map<PageId, PageModel<'a>>
+type NavigationState<'pageName> = {
+    Pages: Map<PageId, PageModel<'pageName>>
     Stack: PageId list }
 
 /// <summary>
@@ -38,8 +41,8 @@ type MessageSource<'msg> =
     with
         static member Upcast(msg: MessageSource<obj>) =
             match msg with
-            | App msg -> App (msg :?> 'b)
-            | Page (msg, pageId) -> Page ((msg :?> 'b), pageId)
+            | App msg -> App (msg :?> 'a)
+            | Page (msg, pageId) -> Page ((msg :?> 'a), pageId)
 
 /// <summary>
 /// Represents a message used to navigate
@@ -166,7 +169,8 @@ type Page<'view, 'pageName, 'args> = {
             let init = fun () ->
                 init() 
                 ||> fun model cmd -> model :> obj, (cmd |> Cmd.map (fun cmd -> cmd :> obj))
-            let view = fun (model: obj) (dispatch: Dispatch<obj>) -> view (model :?> 'model) dispatch
+            let view = fun (model: obj) (dispatch: Dispatch<obj>) -> 
+                view (model :?> 'model) dispatch
             let update =
                 match update with
                 | Some update ->
