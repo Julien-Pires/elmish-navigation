@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>Elmish.Navigation</id>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <authors>Julien Pires</authors>
     <description>
       Elmish-navigation allow to simplify the creation and navigation for multi-pages application powered by Elmish. 
