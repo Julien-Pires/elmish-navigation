@@ -22,6 +22,7 @@ open Fake.DotNet
 open Fake.DotNet.NuGet
 open Fake.IO
 open Fake.IO.Globbing.Operators
+open Fake.IO.FileSystemOperators
 
 module AppVeyor = BuildServer.AppVeyor
 
@@ -37,9 +38,8 @@ type Project = {
 
 let artifactsDir = "artifacts/"
 let packagingDir = "packaging/"
-
-// Filesets
 let solution = "src/Elmish.Navigation.sln"
+
 let projects = 
     !! "src/**/*.fsproj"
     |> Seq.map (fun project ->
@@ -79,15 +79,16 @@ Target.create "Build" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 Target.create "Packages" (fun _ ->
+    Directory.ensure artifactsDir
+
     projects
     |> Seq.iter (fun project ->
         Shell.cleanDirs [packagingDir]
+        !! "*/**.*"
+        |> GlobbingPattern.setBaseDir (project.Directory @@ "bin/release")
+        |> Shell.copyFilesWithSubFolder (packagingDir @@ "lib")
 
-        !! "**"
-        |> GlobbingPattern.setBaseDir "bin/release"
-        |> Shell.copyFilesWithSubFolder packagingDir
-
-        let nuspecFile = Path.Combine [| project.Directory; $"{project.Name}.nuspec" |]
+        let nuspecFile = project.Directory @@ $"{project.Name}.nuspec"
         NuGet.NuGet (fun p ->
             { p with
                 Version = project.Package.Version
