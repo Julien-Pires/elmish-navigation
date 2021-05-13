@@ -1,4 +1,3 @@
-open Fake.IO.Shell
 #r "paket:
 storage: packages
 nuget FSharp.Data
@@ -63,9 +62,10 @@ let projects =
 
 Target.create "Clean" (fun _ ->
     projects
-    |> Seq.iter (fun project ->
-        Shell.cleanDir $"{project.Directory}/obj"
-        Shell.cleanDir $"{project.Directory}/bin")
+    |> Seq.collect (fun project -> [
+        $"{project.Directory}/obj"
+        $"{project.Directory}/bin"])
+    |> Shell.cleanDirs
 )
 
 Target.create "Restore" (fun _ ->
@@ -81,11 +81,11 @@ Target.create "Build" (fun _ ->
 Target.create "Packages" (fun _ ->
     projects
     |> Seq.iter (fun project ->
-        cleanDirs [packagingDir]
+        Shell.cleanDirs [packagingDir]
 
         !! "**"
         |> GlobbingPattern.setBaseDir "bin/release"
-        |> copyFilesWithSubFolder packagingDir
+        |> Shell.copyFilesWithSubFolder packagingDir
 
         let nuspecFile = Path.Combine [| project.Directory; $"{project.Name}.nuspec" |]
         NuGet.NuGet (fun p ->
