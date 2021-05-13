@@ -1,0 +1,12 @@
+version: 1.0.{build}
+
+image: Visual Studio 2019
+
+install:
+  - ps: dotnet tool install fake-cli -g
+
+build_script:
+  - cmd: fake build
+
+artifacts:
+  - path: 'src\**\*.nupkg'
