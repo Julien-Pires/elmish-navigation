@@ -10,12 +10,15 @@
       It makes the management of each page states as much transparent as possible. It allows to focus more on creation and update of new pages instead of how to connect everything.
     </Description>
   </PropertyGroup>
-
+   
   <ItemGroup>
-    <!-- <Compile Include="Types.fsi" /> -->
+    <Compile Include="Types.fsi" />
     <Compile Include="Types.fs" />
-    <!-- <Compile Include="Navigation.fsi" /> -->
+    <Compile Include="PageTemplate.fsi" />
+    <Compile Include="PageTemplate.fs" />
+    <Compile Include="Navigation.fsi" />
     <Compile Include="Navigation.fs" />
+    <Compile Include="Program.fsi" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

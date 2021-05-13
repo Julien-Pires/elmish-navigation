@@ -46,8 +46,8 @@ module Navigation =
         Parameters = parameters }
 
     let applyNavigate state pages name parameters =
-        getTemplate pages name
-        |> Option.map (fun template ->
+        match getTemplate pages name with
+        | Some template ->
             let (PageName name) = name
             let navigationEventArgs = createNavigationEventArgs (Some name) parameters
             let (model, initCmd) = template.Init()
@@ -61,8 +61,8 @@ module Navigation =
                 Cmd.batch [ initCmd; navigateCmd ] 
                 |> Cmd.map (fun cmd -> Page(cmd, pageModel.Id))
                 |> Cmd.map MessageSource.Upcast<_>
-            state, cmds)
-        |> Option.defaultValue (state, [])
+            state, cmds
+        | None -> state, []
 
     let applyNavigateBack state pages parameters =
         getCurrentPage state

@@ -1,6 +1,7 @@
 namespace Elmish.Navigation
 
 open Elmish
+open Elmish.Navigation
 
 [<RequireQualifiedAccess>]
 module Program =
