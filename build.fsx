@@ -1,3 +1,4 @@
+open Fake.IO.Shell
 #r "paket:
 storage: packages
 nuget FSharp.Data
@@ -34,6 +35,9 @@ type Project = {
     Name: string
     Directory: string
     Package: Package }
+
+let artifactsDir = "artifacts/"
+let packagingDir = "packaging/"
 
 // Filesets
 let solution = "src/Elmish.Navigation.sln"
@@ -77,14 +81,19 @@ Target.create "Build" (fun _ ->
 Target.create "Packages" (fun _ ->
     projects
     |> Seq.iter (fun project ->
+        cleanDirs [packagingDir]
+
+        !! "**"
+        |> GlobbingPattern.setBaseDir "bin/release"
+        |> copyFilesWithSubFolder packagingDir
+
         let nuspecFile = Path.Combine [| project.Directory; $"{project.Name}.nuspec" |]
-        let nugetFolder = Path.Combine [| project.Directory; "bin/release" |]
         NuGet.NuGet (fun p ->
             { p with
                 Version = project.Package.Version
                 Project = project.Name
-                WorkingDir = project.Directory
-                OutputPath = nugetFolder
+                WorkingDir = packagingDir
+                OutputPath = artifactsDir
                 AccessKey = Environment.environVar "NUGET_API_KEY"
                 Publish = true })
             nuspecFile)
