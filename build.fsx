@@ -85,15 +85,11 @@ Target.create "Packages" (fun _ ->
     |> Seq.iter (fun project ->
         Shell.cleanDirs [packagingDir]
 
-        !! "*/**.*"
+        !! "**/*.*"
         |> GlobbingPattern.setBaseDir (project.Directory @@ "bin/release")
         |> Shell.copyFilesWithSubFolder (packagingDir @@ "lib")
 
-        !! "*/**.fs"
-        |> GlobbingPattern.setBaseDir project.Directory
-        |> Shell.copyFilesWithSubFolder (packagingDir @@ "fable")
-
-        !! "*/**.fsi"
+        !! "**/*.fs" ++ "**/*.fsi" -- ("obj/**/*.*") -- ("bin/**/*.*")
         |> GlobbingPattern.setBaseDir project.Directory
         |> Shell.copyFilesWithSubFolder (packagingDir @@ "fable")
 
