@@ -89,7 +89,7 @@ Target.create "Packages" (fun _ ->
         |> GlobbingPattern.setBaseDir (project.Directory @@ "bin/release")
         |> Shell.copyFilesWithSubFolder (packagingDir @@ "lib")
 
-        !! "**/*.fs" ++ "**/*.fsi" ++ "**/.*fsproj" -- ("obj/**/*.*") -- ("bin/**/*.*")
+        !! "**/*.fs" ++ "**/*.fsi" ++ "**/*.fsproj" -- ("obj/**/*.*") -- ("bin/**/*.*")
         |> GlobbingPattern.setBaseDir project.Directory
         |> Shell.copyFilesWithSubFolder (packagingDir @@ "fable")
 
