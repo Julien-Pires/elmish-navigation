@@ -22,6 +22,7 @@ open Fake.DotNet
 open Fake.DotNet.NuGet
 open Fake.IO
 open Fake.IO.Globbing.Operators
+open Fake.IO.FileSystemOperators
 
 module AppVeyor = BuildServer.AppVeyor
 
@@ -35,8 +36,10 @@ type Project = {
     Directory: string
     Package: Package }
 
-// Filesets
+let artifactsDir = "artifacts/"
+let packagingDir = "packaging/"
 let solution = "src/Elmish.Navigation.sln"
+
 let projects = 
     !! "src/**/*.fsproj"
     |> Seq.map (fun project ->
@@ -59,9 +62,10 @@ let projects =
 
 Target.create "Clean" (fun _ ->
     projects
-    |> Seq.iter (fun project ->
-        Shell.cleanDir $"{project.Directory}/obj"
-        Shell.cleanDir $"{project.Directory}/bin")
+    |> Seq.collect (fun project -> [
+        $"{project.Directory}/obj"
+        $"{project.Directory}/bin"])
+    |> Shell.cleanDirs
 )
 
 Target.create "Restore" (fun _ ->
@@ -75,16 +79,27 @@ Target.create "Build" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 Target.create "Packages" (fun _ ->
+    Directory.ensure artifactsDir
+
     projects
     |> Seq.iter (fun project ->
-        let nuspecFile = Path.Combine [| project.Directory; $"{project.Name}.nuspec" |]
-        let nugetFolder = Path.Combine [| project.Directory; "bin/release" |]
+        Shell.cleanDirs [packagingDir]
+
+        !! "**/*.*"
+        |> GlobbingPattern.setBaseDir (project.Directory @@ "bin/release")
+        |> Shell.copyFilesWithSubFolder (packagingDir @@ "lib")
+
+        !! "**/*.fs" ++ "**/*.fsi" ++ "**/*.fsproj" -- ("obj/**/*.*") -- ("bin/**/*.*")
+        |> GlobbingPattern.setBaseDir project.Directory
+        |> Shell.copyFilesWithSubFolder (packagingDir @@ "fable")
+
+        let nuspecFile = project.Directory @@ $"{project.Name}.nuspec"
         NuGet.NuGet (fun p ->
             { p with
                 Version = project.Package.Version
                 Project = project.Name
-                WorkingDir = project.Directory
-                OutputPath = nugetFolder
+                WorkingDir = packagingDir
+                OutputPath = artifactsDir
                 AccessKey = Environment.environVar "NUGET_API_KEY"
                 Publish = true })
             nuspecFile)
