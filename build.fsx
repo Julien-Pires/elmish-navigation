@@ -98,9 +98,6 @@ Target.create "Packages" (fun _ ->
             { p with
                 Version = project.Package.Version
                 Project = project.Name
-                Dependencies = [
-                    "FSharp.Core","5.0.0"
-                    "Fable.Elmish", "3.1.0" ]
                 WorkingDir = packagingDir
                 OutputPath = artifactsDir
                 AccessKey = Environment.environVar "NUGET_API_KEY"
