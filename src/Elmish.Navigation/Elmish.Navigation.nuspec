@@ -8,5 +8,6 @@
       Elmish-navigation allow to simplify the creation and navigation for multi-pages application powered by Elmish. 
       It makes the management of each page states as much transparent as possible. It allows to focus more on creation and update of new pages instead of how to connect everything.
     </description>
+    @dependencies@
   </metadata>
 </package>
