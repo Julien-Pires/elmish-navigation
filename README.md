@@ -22,9 +22,13 @@ paket add Elmish.Navigation
 
 **Elmish-navigation** is a plugin that extends `Program` type from **Elmish**. Like others `Program` plugin, you must call it once the program is created. The name of the method is `withNavigation`. 
 
-Here is the minimum setup to use it:
+### Usage
+
+Here is the minimum setup to use the navigation library:
 
 ```fsharp
+// App.fs
+
 module App
 
 open Elmish
@@ -54,10 +58,48 @@ Program.mkProgram init update view
 * Pages: It's a list of name associated to a page template.
 * Default: Name of the default page used at the first screen.
 
-Few notes regarding the way the library handle messages and pages. We make a clear distinction between message sent by the App and message sent from a page. 
+Now we can create and add a new page to our application. A page is created with the static method Create of PageTemplate.
 
-We called `App` the init/update/view that you have at the root level of your application, the ones passed to the `mkProgram` method when you init the app. You will probably use the app methods to handle messags and views that are global to your application.
+```fsharp
+// Home.fs
 
-And we called `Page` the individuals init/update/view of each pages. Messages, models and views from `Page` are usually constrained to the page and does not leak outside.
+module Home 
 
-To resume, when sending messages from the update or dispatch of the `App`, they will be received by the `update` method of the `App`. And when sending from a `Page`, it will be received by the `update` method of the same page.
+open Elmish.Navigation
+
+type Model = {
+    Counter: int }
+    
+let init () = {
+    Counter = 0 }, []
+
+let update msg model =
+    model, []
+
+module R = Fable.ReactNative.Helpers
+
+let view model dispatch (navigator: Navigator<_,_>) =
+    R.view [] []
+
+let page = PageTemplate.Create(init, view, update, onNavigate)
+```
+
+We can add our new page to the application.
+
+```fsharp
+Program.mkProgram init update view
+|> Program.withNavigation [
+    "Home", Home.page ] "Home"
+|> Program.withConsoleTrace
+|> Program.run
+```
+
+>Few notes regarding the way the library handle messages and pages. We make a clear distinction between message sent by the `App` and message sent by a `Page`.
+>
+>We called `App` the init/update/view that you have at the root level of your application, the ones passed to the `mkProgram` method when you init the app. You will probably use the app methods to handle messags and views that are global to your application.
+>
+>And we called `Page` the individuals init/update/view of each pages. Messages, models and views from `Page` are usually constrained to the page and does not leak outside.
+>
+>To resume, when sending messages from the update or dispatch of the `App`, they will be received by the `update` method of the `App`. And when sending from a `Page`, it will be received by the `update` method of the same page.
+
+## API
